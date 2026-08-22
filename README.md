@@ -1,1 +1,0 @@
-# pijatIN-v6-customer-
