@@ -12,13 +12,14 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
+      - uses: android-actions/setup-android@v3
       - uses: gradle/actions/setup-gradle@v3
         with:
-          gradle-version: 8.5
+          gradle-version: 8.9
       - name: Build APK
         run: gradle app:assembleDebug --stacktrace
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: pijatIN-customer-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          path: app/build/outputs/apk/debug/*.apk
