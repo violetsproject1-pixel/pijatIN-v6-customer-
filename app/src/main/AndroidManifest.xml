@@ -2,6 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application
         android:allowBackup="true"
+        android:icon="@drawable/ic_launcher(1)"
+        android:roundIcon="@drawable/ic_launcher(1)"
         android:label="PijatIN Customer"
         android:theme="@android:style/Theme.NoTitleBar">
         <activity
