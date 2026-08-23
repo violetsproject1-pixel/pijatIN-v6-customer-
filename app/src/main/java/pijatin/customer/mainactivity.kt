@@ -1,4 +1,4 @@
-package pijatin.customer
+package com.pijatin.customer
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -21,7 +21,7 @@ class MainActivity : ComponentActivity() {
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "PijatIN Customer v7.2\nFix #46 Berhasil!",
+                        text = "PijatIN Customer v7.2\nFix #52 Berhasil!",
                         textAlign = TextAlign.Center
                     )
                 }
