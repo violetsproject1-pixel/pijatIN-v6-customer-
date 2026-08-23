@@ -1,0 +1,15 @@
+name: Fix Icon Delete Bad File
+on: workflow_dispatch
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          rm -f "app/src/main/res/drawable/ic_launcher (1).png"
+          rm -f "app/src/main/res/drawable/ic_launcher (2).png"
+          git config user.name "violet"
+          git config user.email "violet@test.com"
+          git add -A
+          git commit -m "Auto delete bad icon name #91" || echo "nothing"
+          git push
