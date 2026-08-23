@@ -8,10 +8,10 @@ android {
 namespace = "com.pijatin.customer"
     compileSdk = 34
   defaultConfig {  
- applicationId = "com.pijatin.customer."
+ applicationId = "com.pijatin.customer"
         minSdk = 24
         targetSdk = 34
-        versionCode = 41
+        versionCode = 44
         versionName = "7.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
