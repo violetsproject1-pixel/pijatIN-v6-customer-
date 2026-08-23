@@ -11,8 +11,12 @@ android {
         applicationId = "com.pijatin.customer"
         minSdk = 24
         targetSdk = 34
-        versionCode = 66
+        versionCode = 67
         versionName = "7.4"
+    }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
     buildFeatures {
         compose = true
@@ -24,8 +28,12 @@ android {
     }
 }
 
+kotlin {
+    jvmToolchain(17)
+}
+
 dependencies {
-    implementation("androidx.appcompat:appcompat:1.6.1") // <-- INI YANG HILANG! BIAR Theme.AppCompat KETEMU!
+    implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
     implementation("androidx.activity:activity-compose:1.8.2")
