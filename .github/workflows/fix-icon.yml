@@ -1,15 +1,25 @@
 name: Fix Icon Delete Bad File
 on: workflow_dispatch
+permissions:
+  contents: write
 jobs:
   fix:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
       - run: |
+          echo "Hapus file dengan spasi..."
           rm -f "app/src/main/res/drawable/ic_launcher (1).png"
           rm -f "app/src/main/res/drawable/ic_launcher (2).png"
-          git config user.name "violet"
-          git config user.email "violet@test.com"
+          rm -f "app/src/main/res/drawable/ic_launcher (1).jpg"
+          rm -f "app/src/main/res/drawable/ic_launcher.png"
+          ls -la "app/src/main/res/drawable/" | head -20
+          git config user.name "violetsproject1-pixel"
+          git config user.email "violetsproject1-pixel@users.noreply.github.com"
+          git config --global --add safe.directory $GITHUB_WORKSPACE
           git add -A
-          git commit -m "Auto delete bad icon name #91" || echo "nothing"
-          git push
+          git commit -m "Auto delete bad icon (1).png #92 fix" || echo "nothing to commit"
+          git push origin main
