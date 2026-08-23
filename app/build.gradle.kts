@@ -11,7 +11,7 @@ namespace = "com.pijatin.customer"
  applicationId = "com.pijatin.customer"
         minSdk = 24
         targetSdk = 34
-        versionCode = 52
+        versionCode = 58
         versionName = "7.2"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
