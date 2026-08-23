@@ -9,7 +9,7 @@ android {
         applicationId = "com.pijatin.customer"
         minSdk = 24
         targetSdk = 34
-        versionCode = 59
+        versionCode = 61
         versionName = "7.4"
     }
     buildFeatures { compose = true }
