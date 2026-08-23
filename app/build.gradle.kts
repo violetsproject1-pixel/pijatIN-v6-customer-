@@ -5,14 +5,14 @@ plugins {
 }
 
 android {
-namespace = "com.pijatin.customer.v7"
+namespace = "com.pijatin.customer"
     compileSdk = 34
   defaultConfig {  
- applicationId = "com.pijatin.customer.v7"
+ applicationId = "com.pijatin.customer."
         minSdk = 24
         targetSdk = 34
         versionCode = 41
-        versionName = "7.0"
+        versionName = "7.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
