@@ -1,7 +1,9 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    id("org.jetbrains.kotlin.plugin.compose") version "2.0.21"
 }
+
 android {
     namespace = "com.pijatin.customer"
     compileSdk = 34
@@ -9,13 +11,19 @@ android {
         applicationId = "com.pijatin.customer"
         minSdk = 24
         targetSdk = 34
-        versionCode = 61
+        versionCode = 65
         versionName = "7.4"
     }
-    buildFeatures { compose = true }
-    composeOptions { kotlinCompilerExtensionVersion = "1.5.8" }
-    packaging { resources { excludes += "/META-INF/{AL2.0,LGPL2.1}" } }
+    buildFeatures {
+        compose = true
+    }
+    packaging {
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        }
+    }
 }
+
 dependencies {
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
