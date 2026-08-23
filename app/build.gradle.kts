@@ -3,17 +3,16 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
 }
+
 android {
 namespace = "com.pijatin.customer.v7"
     compileSdk = 34
   defaultConfig {  
  applicationId = "com.pijatin.customer.v7"
-versionCode = 41
-versionName = "7.0"
         minSdk = 24
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 41
+        versionName = "7.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
