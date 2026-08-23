@@ -23,3 +23,4 @@ jobs:
         with:
           name: pijatIN-customer-apk
           path: app/build/outputs/apk/debug/*.apk
+          
