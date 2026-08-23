@@ -11,7 +11,7 @@ android {
         applicationId = "com.pijatin.customer"
         minSdk = 24
         targetSdk = 34
-        versionCode = 65
+        versionCode = 66
         versionName = "7.4"
     }
     buildFeatures {
@@ -25,6 +25,7 @@ android {
 }
 
 dependencies {
+    implementation("androidx.appcompat:appcompat:1.6.1") // <-- INI YANG HILANG! BIAR Theme.AppCompat KETEMU!
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
     implementation("androidx.activity:activity-compose:1.8.2")
