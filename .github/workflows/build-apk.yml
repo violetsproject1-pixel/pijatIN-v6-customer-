@@ -1,42 +1,45 @@
 name: Build APK
-
 on:
   push:
     branches: [ main ]
   workflow_dispatch:
-
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - uses: actions/setup-java@v4
+      - name: Set up Node (for React Native/Expo)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: '**/package-lock.json'
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
         with:
           java-version: '17'
           distribution: 'temurin'
           cache: gradle
-
-      - name: Find gradlew and fix icon GOLD
+      - name: Install deps if package.json exists
+        run: |
+          if [ -f package.json ]; then npm ci || npm install; fi
+          if [ -f android/package.json ]; then cd android && npm ci || npm install && cd ..; fi
+      - name: Restore gradlew if missing
+        run: |
+          ls -la
+          ls -la android/ 2>&1 | head -30
+          if [ ! -f gradlew ] && [ ! -f android/gradlew ]; then
+            echo "No gradlew found - creating wrapper via gradle"
+            # Install gradle via apt and generate wrapper
+            gradle wrapper --gradle-version 8.6 || ./android/gradlew wrapper --gradle-version 8.6 || true
+          fi
+          find . -name gradlew -type f -exec ls -lh {} \; || true
+      - name: Fix GOLD LOTUS icon + clean bad files
         run: |
           set -e
-          pwd
-          ls -la
-          # Find gradlew location
-          GW=$(find . -name gradlew -type f | head -1)
-          echo "Found gradlew at $GW"
-          if [ -z "$GW" ]; then
-            echo "gradlew not found!"
-            find . -maxdepth 3 -type f -name "*.gradle" | head -20
-            exit 1
-          fi
-          chmod +x $GW
-          DIR=$(dirname $GW)
-          echo "Gradle dir $DIR"
-          # Fix icon in that dir + root
-          for BASE in . $DIR ./android; do
+          for BASE in . ./android android; do
             if [ -d $BASE/app/src/main/res ]; then
-              echo "Fixing icons in $BASE"
+              echo "Fixing $BASE"
               rm -rf $BASE/app/src/main/res/mipmap-anydpi-v26
               rm -f $BASE/app/src/main/res/drawable/ic_launcher.png
               rm -f $BASE/app/src/main/res/drawable/ic_launcher.xml
@@ -62,21 +65,33 @@ jobs:
               fi
             fi
           done
-          echo "GW=$GW" >> $GITHUB_ENV
-          echo "GW_DIR=$(dirname $GW)" >> $GITHUB_ENV
-          find . -path "*/res/mipmap-xxxhdpi/ic_launcher.png" -exec ls -lh {} \;
-
-      - name: Build Debug APK
+      - name: Make gradlew executable
+        run: |
+          find . -name gradlew -type f -exec chmod +x {} \; || true
+          ls -lh $(find . -name gradlew -type f | head -1) || true
+      - name: Build APK (auto-detect gradlew location)
         run: |
           set -e
-          cd ${ env.GW_DIR }
+          GW=$(find . -name gradlew -type f | head -1)
+          echo "Using gradlew: $GW"
+          if [ -z "$GW" ]; then
+            echo "FATAL: gradlew still not found after restore"
+            echo "Trying npx expo prebuild..."
+            npx expo prebuild --platform android --clean || true
+            GW=$(find . -name gradlew -type f | head -1)
+          fi
+          echo "Final GW=$GW"
+          DIR=$(dirname $GW)
+          cd $DIR
           ./gradlew app:assembleDebug --stacktrace --no-daemon
-
-      - name: Find and Upload APK
+      - name: Upload APK
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: PijatIN-Customer-GOLD-APK-FINAL-100
+          name: PijatIN-GOLD-APK-101
           path: |
-            **/app/build/outputs/apk/debug/app-debug.apk
-            **/outputs/apk/debug/*.apk
+            **/app/build/outputs/apk/debug/*.apk
+            **/build/outputs/apk/debug/*.apk
+            android/app/build/outputs/apk/debug/*.apk
+            app/build/outputs/apk/debug/*.apk
           if-no-files-found: warn
