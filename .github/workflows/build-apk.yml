@@ -8,39 +8,57 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Fix icon (1) bug - SUPER ROBUST
+      - name: Fix icon (1) with Python - SAFE
         run: |
-          echo "FIND ALL BAD ICONS"
-          find app/src/main/res -name "*ic_launcher*" -type f || true
-          echo "--- MANIFEST BEFORE ---"
-          cat app/src/main/AndroidManifest.xml | head -20
-          # 1. Rename all files with (1) (2) etc to clean name
-          find app/src/main/res -type f -name "*(*)*" | while read f; do
-            clean=$(echo "$f" | sed 's/(1)//g; s/(2)//g; s/(3)//g; s/ //g')
-            echo "Fix $f -> $clean"
-            mv "$f" "$clean" 2>/dev/null || mv "$f" "$(dirname $f)/$(basename $f | tr -d '()1 2 3')" || true
-          done
-          # 2. Fix Manifest if it references (1)
-          sed -i 's/ic_launcher(1)/ic_launcher/g' app/src/main/AndroidManifest.xml || true
-          sed -i 's/ic_launcher_round(1)/ic_launcher_round/g' app/src/main/AndroidManifest.xml || true
-          echo "--- MANIFEST AFTER ---"
-          cat app/src/main/AndroidManifest.xml | head -20
-          echo "--- ICONS AFTER ---"
-          find app/src/main/res -name "*ic_launcher*" -type f
-          # 3. Restore gradlew 3 files
-          rm -f gradle/wrapper/gradle-wrapper.jar
-          rm -rf gradle/wrapper/gradle-wrapper.jar
-          mkdir -p gradle/wrapper
-          curl -sL https://raw.githubusercontent.com/gradle/gradle/v8.10.2/gradlew -o gradlew
-          curl -sL https://github.com/gradle/gradle/raw/v8.10.2/gradle/wrapper/gradle-wrapper.jar -o gradle/wrapper/gradle-wrapper.jar
-          echo "distributionBase=GRADLE_USER_HOME" > gradle/wrapper/gradle-wrapper.properties
-          echo "distributionPath=wrapper/dists" >> gradle/wrapper/gradle-wrapper.properties
-          echo "distributionUrl=https\://services.gradle.org/distributions/gradle-8.10.2-all.zip" >> gradle/wrapper/gradle-wrapper.properties
-          echo "networkTimeout=10000" >> gradle/wrapper/gradle-wrapper.properties
-          echo "validateDistributionUrl=true" >> gradle/wrapper/gradle-wrapper.properties
-          echo "zipStoreBase=GRADLE_USER_HOME" >> gradle/wrapper/gradle-wrapper.properties
-          echo "zipStorePath=wrapper/dists" >> gradle/wrapper/gradle-wrapper.properties
-          chmod +x gradlew
+          python3 << 'PY'
+          import os, re, pathlib
+          root = pathlib.Path("app/src/main/res")
+          print("Before:")
+          for p in root.rglob("*ic_launcher*"):
+              print(p)
+          # Rename files containing ( ) 
+          for p in list(root.rglob("*")):
+              if p.is_file() and "(" in p.name:
+                  new_name = p.name.replace("(1)","").replace("(2)","").replace("(3)","").replace(" ","")
+                  new_path = p.parent / new_name
+                  print(f"Rename {p} -> {new_path}")
+                  if not new_path.exists():
+                      p.rename(new_path)
+                  else:
+                      p.unlink()
+          # Fix manifest
+          man = pathlib.Path("app/src/main/AndroidManifest.xml")
+          if man.exists():
+              txt = man.read_text()
+              txt_new = txt.replace("ic_launcher(1)", "ic_launcher").replace("ic_launcher_round(1)", "ic_launcher_round").replace("(1)","")
+              if txt != txt_new:
+                  print("Fixing AndroidManifest.xml")
+                  man.write_text(txt_new)
+          print("After:")
+          for p in root.rglob("*ic_launcher*"):
+              print(p)
+          # Restore gradlew
+          import urllib.request, os
+          os.makedirs("gradle/wrapper", exist_ok=True)
+          def dl(url, dst):
+              print(f"DL {url} -> {dst}")
+              try:
+                  urllib.request.urlretrieve(url, dst)
+              except Exception as e:
+                  print(e)
+          # Remove bad jar if is directory
+          jar_path = pathlib.Path("gradle/wrapper/gradle-wrapper.jar")
+          if jar_path.is_dir():
+              import shutil
+              shutil.rmtree(jar_path)
+          if jar_path.exists():
+              jar_path.unlink()
+          dl("https://raw.githubusercontent.com/gradle/gradle/v8.10.2/gradlew", "gradlew")
+          dl("https://github.com/gradle/gradle/raw/v8.10.2/gradle/wrapper/gradle-wrapper.jar", "gradle/wrapper/gradle-wrapper.jar")
+          Path = pathlib.Path
+          Path("gradle/wrapper/gradle-wrapper.properties").write_text("distributionBase=GRADLE_USER_HOME\ndistributionPath=wrapper/dists\ndistributionUrl=https\\://services.gradle.org/distributions/gradle-8.10.2-all.zip\nnetworkTimeout=10000\nvalidateDistributionUrl=true\nzipStoreBase=GRADLE_USER_HOME\nzipStorePath=wrapper/dists\n")
+          os.chmod("gradlew", 0o755)
+          PY
       - uses: actions/setup-java@v5
         with:
           java-version: '17'
@@ -49,9 +67,8 @@ jobs:
       - name: Local props
         run: echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
       - name: Build APK
-        run: ./gradlew app:assembleDebug --no-daemon --stacktrace
+        run: ./gradlew app:assembleDebug --no-daemon
       - uses: actions/upload-artifact@v4
-        if: always()
         with:
-          name: PijatIN-GOLD-APK-118-FIXED
+          name: PijatIN-GOLD-APK-119-FIXED
           path: app/build/outputs/apk/debug/*.apk
