@@ -8,24 +8,43 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Restore all wrapper files
+
+      - name: Fix wrapper - jar was directory
         run: |
-          rm -rf gradle
+          rm -rf gradle/wrapper/gradle-wrapper.jar
+          if [ -d "gradle/wrapper/gradle-wrapper.jar" ]; then rm -rf gradle/wrapper/gradle-wrapper.jar; fi
           mkdir -p gradle/wrapper
-          curl -Ls https://raw.githubusercontent.com/gradle/gradle/v8.7.0/gradlew -o gradlew
-          curl -Ls https://raw.githubusercontent.com/gradle/gradle/v8.7.0/gradle/wrapper/gradle-wrapper.jar -o gradle/wrapper/gradle-wrapper.jar
-          curl -Ls https://raw.githubusercontent.com/gradle/gradle/v8.7.0/gradle/wrapper/gradle-wrapper.properties -o gradle/wrapper/gradle-wrapper.properties
+          curl -Ls https://raw.githubusercontent.com/gradle/gradle/v8.10.2/gradlew -o gradlew
+          curl -Ls https://github.com/gradle/gradle/raw/v8.10.2/gradle/wrapper/gradle-wrapper.jar -o gradle/wrapper/gradle-wrapper.jar
+          printf "distributionBase=GRADLE_USER_HOME
+distributionPath=wrapper/dists
+distributionUrl=https\://services.gradle.org/distributions/gradle-8.10.2-all.zip
+networkTimeout=10000
+validateDistributionUrl=true
+zipStoreBase=GRADLE_USER_HOME
+zipStorePath=wrapper/dists
+" > gradle/wrapper/gradle-wrapper.properties
           chmod +x gradlew
-          ls -lh gradle/wrapper/
+          ls -lh gradlew gradle/wrapper/
           cat gradle/wrapper/gradle-wrapper.properties
+
       - uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: temurin
+
       - uses: android-actions/setup-android@v3
-      - name: Build APK
-        run: ./gradlew app:assembleDebug --no-daemon
+
+      - name: Build APK with logs
+        run: |
+          ./gradlew --version
+          ./gradlew app:assembleDebug --no-daemon --stacktrace || ./gradlew assembleDebug --no-daemon --stacktrace
+
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
-          name: PijatIN-GOLD-APK-113
-          path: app/build/outputs/apk/debug/*.apk
+          name: PijatIN-GOLD-APK-114
+          path: |
+            **/build/outputs/apk/debug/*.apk
+            **/build/outputs/apk/**/*.apk
+          if-no-files-found: warn
