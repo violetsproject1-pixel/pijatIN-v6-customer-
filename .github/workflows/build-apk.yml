@@ -3,6 +3,7 @@ on:
   push:
     branches: [ main ]
   workflow_dispatch:
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -18,33 +19,39 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Grant execute permission
-        run: chmod +x gradlew
+      - name: Make gradlew executable + show project
+        run: |
+          chmod +x gradlew
+          ls -la
+          ls -la app/src/main/res/mipmap-xxxhdpi/ || true
+          echo "SDK: $ANDROID_HOME"
+          ./gradlew --version
 
-      - name: Clean bad drawables (keep GOLD icon)
+      - name: Clean bad icons only
         run: |
           rm -f app/src/main/res/drawable/ic_launcher.png || true
-          rm -f app/src/main/res/drawable/ic_launcher.xml || true
-          rm -f app/src/main/res/drawable/ic_launcher_round.xml || true
           rm -f "app/src/main/res/drawable/ic_launcher (1).png" || true
           rm -rf app/src/main/res/mipmap-anydpi-v26 || true
-          echo "ICON GOLD CHECK:"
-          ls -lh app/src/main/res/mipmap-xxxhdpi/ic_launcher.png || echo "ICON MISSING!"
-          ls -lh app/src/main/res/mipmap-xxhdpi/ic_launcher.png || true
 
-      - name: Build Debug APK
-        run: ./gradlew app:assembleDebug --stacktrace --no-daemon
+      - name: Build APK (will take 2-3 minutes)
+        run: |
+          ./gradlew app:assembleDebug --stacktrace --no-daemon --info | tail -n 200
+          echo "BUILD DONE"
 
-      - name: List APK outputs
+      - name: Find APKs
         if: always()
-        run: find . -name "*.apk" -type f -exec ls -lh {} \;
+        run: |
+          echo "Searching APKs..."
+          find . -name "*.apk" -type f
+          ls -R app/build/outputs/ || true
 
-      - name: Upload APK GOLD
+      - name: Upload GOLD APK FINAL
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: PijatIN-Customer-GOLD-APK-103-FINAL
+          name: PijatIN-GOLD-APK-104-FINAL
           path: |
             app/build/outputs/apk/debug/*.apk
-            **/build/outputs/apk/debug/*.apk
+            app/build/outputs/apk/**/*.apk
             **/*.apk
+          if-no-files-found: warn
