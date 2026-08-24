@@ -8,43 +8,32 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Fix wrapper - jar was directory
+      - name: Restore gradlew
         run: |
           rm -rf gradle/wrapper/gradle-wrapper.jar
-          if [ -d "gradle/wrapper/gradle-wrapper.jar" ]; then rm -rf gradle/wrapper/gradle-wrapper.jar; fi
           mkdir -p gradle/wrapper
-          curl -Ls https://raw.githubusercontent.com/gradle/gradle/v8.10.2/gradlew -o gradlew
-          curl -Ls https://github.com/gradle/gradle/raw/v8.10.2/gradle/wrapper/gradle-wrapper.jar -o gradle/wrapper/gradle-wrapper.jar
-          printf "distributionBase=GRADLE_USER_HOME
-distributionPath=wrapper/dists
-distributionUrl=https\://services.gradle.org/distributions/gradle-8.10.2-all.zip
-networkTimeout=10000
-validateDistributionUrl=true
-zipStoreBase=GRADLE_USER_HOME
-zipStorePath=wrapper/dists
-" > gradle/wrapper/gradle-wrapper.properties
+          curl -sL https://raw.githubusercontent.com/gradle/gradle/v8.10.2/gradlew -o gradlew
+          curl -sL https://github.com/gradle/gradle/raw/v8.10.2/gradle/wrapper/gradle-wrapper.jar -o gradle/wrapper/gradle-wrapper.jar
+          echo "distributionBase=GRADLE_USER_HOME" > gradle/wrapper/gradle-wrapper.properties
+          echo "distributionPath=wrapper/dists" >> gradle/wrapper/gradle-wrapper.properties
+          echo "distributionUrl=https\://services.gradle.org/distributions/gradle-8.10.2-all.zip" >> gradle/wrapper/gradle-wrapper.properties
+          echo "networkTimeout=10000" >> gradle/wrapper/gradle-wrapper.properties
+          echo "validateDistributionUrl=true" >> gradle/wrapper/gradle-wrapper.properties
+          echo "zipStoreBase=GRADLE_USER_HOME" >> gradle/wrapper/gradle-wrapper.properties
+          echo "zipStorePath=wrapper/dists" >> gradle/wrapper/gradle-wrapper.properties
           chmod +x gradlew
-          ls -lh gradlew gradle/wrapper/
-          cat gradle/wrapper/gradle-wrapper.properties
-
-      - uses: actions/setup-java@v4
+          ./gradlew --version
+      - uses: actions/setup-java@v5
         with:
           java-version: '17'
           distribution: temurin
-
       - uses: android-actions/setup-android@v3
-
-      - name: Build APK with logs
-        run: |
-          ./gradlew --version
-          ./gradlew app:assembleDebug --no-daemon --stacktrace || ./gradlew assembleDebug --no-daemon --stacktrace
-
+      - name: Make local properties
+        run: echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
+      - name: Build APK
+        run: ./gradlew app:assembleDebug --no-daemon --stacktrace
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: PijatIN-GOLD-APK-114
-          path: |
-            **/build/outputs/apk/debug/*.apk
-            **/build/outputs/apk/**/*.apk
-          if-no-files-found: warn
+          name: PijatIN-GOLD-APK-116
+          path: app/build/outputs/apk/debug/*.apk
