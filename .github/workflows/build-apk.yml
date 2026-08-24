@@ -8,40 +8,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: RESTORE GRADLEW + JAR OFFICIAL (bypass wrapper task)
+      - name: Fix gradlew from official
         run: |
-          echo "=== BEFORE ==="
-          ls -lh gradlew gradle/wrapper/ || true
-          wc -c gradlew gradle/wrapper/gradle-wrapper.jar 2>&1 || true
-          rm -f gradlew gradlew.bat gradle/wrapper/gradle-wrapper.jar
-          mkdir -p gradle/wrapper
-          echo "Downloading official gradlew..."
-          curl -sL https://raw.githubusercontent.com/gradle/gradle/v8.7.0/gradlew -o gradlew
-          curl -sL https://raw.githubusercontent.com/gradle/gradle/v8.7.0/gradle/wrapper/gradle-wrapper.jar -o gradle/wrapper/gradle-wrapper.jar
-          curl -sL https://raw.githubusercontent.com/gradle/gradle/v8.7.0/gradle/wrapper/gradle-wrapper.properties -o gradle/wrapper/gradle-wrapper.properties || true
+          rm -f gradlew
+          curl -Ls https://raw.githubusercontent.com/gradle/gradle/v8.7.0/gradlew -o gradlew
           chmod +x gradlew
-          echo "=== AFTER ==="
-          ls -lh gradlew gradle/wrapper/
-          head -5 gradlew
-
+          rm -f gradle/wrapper/gradle-wrapper.jar
+          mkdir -p gradle/wrapper
+          curl -Ls https://github.com/gradle/gradle/raw/v8.7.0/gradle/wrapper/gradle-wrapper.jar -o gradle/wrapper/gradle-wrapper.jar
+          ls -lh gradlew gradle/wrapper/gradle-wrapper.jar
       - uses: actions/setup-java@v4
         with:
           java-version: '17'
-          distribution: 'temurin'
-
+          distribution: temurin
       - uses: android-actions/setup-android@v3
-
-      - name: Build REAL APK 4m
-        run: ./gradlew app:assembleDebug --stacktrace --no-daemon
-
-      - name: Find APKs
-        if: always()
-        run: find . -type f -name "*.apk" -exec ls -lh {} \;
-
-      - name: Upload GOLD APK
-        if: always()
+      - name: Build APK
+        run: ./gradlew app:assembleDebug
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: PijatIN-GOLD-APK-110-FINAL
+          name: PijatIN-APK-111
           path: app/build/outputs/apk/debug/*.apk
