@@ -8,29 +8,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Fix gradlew jar is directory
+      - name: Restore all wrapper files
         run: |
-          rm -rf gradlew gradle/wrapper
+          rm -rf gradle
           mkdir -p gradle/wrapper
           curl -Ls https://raw.githubusercontent.com/gradle/gradle/v8.7.0/gradlew -o gradlew
-          curl -Ls https://github.com/gradle/gradle/raw/v8.7.0/gradle/wrapper/gradle-wrapper.jar -o gradle/wrapper/gradle-wrapper.jar
+          curl -Ls https://raw.githubusercontent.com/gradle/gradle/v8.7.0/gradle/wrapper/gradle-wrapper.jar -o gradle/wrapper/gradle-wrapper.jar
+          curl -Ls https://raw.githubusercontent.com/gradle/gradle/v8.7.0/gradle/wrapper/gradle-wrapper.properties -o gradle/wrapper/gradle-wrapper.properties
           chmod +x gradlew
-          ls -lh gradlew gradle/wrapper/gradle-wrapper.jar
-          echo "Fixed OK"
-
+          ls -lh gradle/wrapper/
+          cat gradle/wrapper/gradle-wrapper.properties
       - uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: temurin
-
       - uses: android-actions/setup-android@v3
-
       - name: Build APK
         run: ./gradlew app:assembleDebug --no-daemon
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
-          name: PijatIN-GOLD-APK-112
+          name: PijatIN-GOLD-APK-113
           path: app/build/outputs/apk/debug/*.apk
