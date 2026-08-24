@@ -8,56 +8,75 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Fix icon (1) with Python - SAFE
+      - name: Fix ALL icons - GOLD LOTUS FINAL
         run: |
           python3 << 'PY'
-          import os, re, pathlib
-          root = pathlib.Path("app/src/main/res")
-          print("Before:")
-          for p in root.rglob("*ic_launcher*"):
-              print(p)
-          # Rename files containing ( ) 
-          for p in list(root.rglob("*")):
+          import pathlib, shutil, os
+          res = pathlib.Path("app/src/main/res")
+          # 1. Rename any file with ( ) 
+          for p in list(res.rglob("*")):
               if p.is_file() and "(" in p.name:
-                  new_name = p.name.replace("(1)","").replace("(2)","").replace("(3)","").replace(" ","")
-                  new_path = p.parent / new_name
-                  print(f"Rename {p} -> {new_path}")
-                  if not new_path.exists():
-                      p.rename(new_path)
+                  new = p.name.replace("(1)","").replace("(2)","").replace("(3)","").replace(" ","").replace("(","").replace(")","")
+                  np = p.parent / new
+                  print(f"RENAME {p} -> {np}")
+                  if not np.exists():
+                      p.rename(np)
                   else:
-                      p.unlink()
-          # Fix manifest
+                      p.unlink(missing_ok=True)
+          # 2. Fix manifest
           man = pathlib.Path("app/src/main/AndroidManifest.xml")
           if man.exists():
               txt = man.read_text()
-              txt_new = txt.replace("ic_launcher(1)", "ic_launcher").replace("ic_launcher_round(1)", "ic_launcher_round").replace("(1)","")
-              if txt != txt_new:
-                  print("Fixing AndroidManifest.xml")
-                  man.write_text(txt_new)
-          print("After:")
-          for p in root.rglob("*ic_launcher*"):
-              print(p)
-          # Restore gradlew
-          import urllib.request, os
-          os.makedirs("gradle/wrapper", exist_ok=True)
-          def dl(url, dst):
-              print(f"DL {url} -> {dst}")
-              try:
-                  urllib.request.urlretrieve(url, dst)
-              except Exception as e:
-                  print(e)
-          # Remove bad jar if is directory
-          jar_path = pathlib.Path("gradle/wrapper/gradle-wrapper.jar")
-          if jar_path.is_dir():
-              import shutil
-              shutil.rmtree(jar_path)
-          if jar_path.exists():
-              jar_path.unlink()
-          dl("https://raw.githubusercontent.com/gradle/gradle/v8.10.2/gradlew", "gradlew")
-          dl("https://github.com/gradle/gradle/raw/v8.10.2/gradle/wrapper/gradle-wrapper.jar", "gradle/wrapper/gradle-wrapper.jar")
-          Path = pathlib.Path
-          Path("gradle/wrapper/gradle-wrapper.properties").write_text("distributionBase=GRADLE_USER_HOME\ndistributionPath=wrapper/dists\ndistributionUrl=https\\://services.gradle.org/distributions/gradle-8.10.2-all.zip\nnetworkTimeout=10000\nvalidateDistributionUrl=true\nzipStoreBase=GRADLE_USER_HOME\nzipStorePath=wrapper/dists\n")
+              for bad in ["ic_launcher(1)", "ic_launcher_round(1)", "(1)", "(2)"]:
+                  txt = txt.replace(bad, "ic_launcher" if "launcher" in bad else "")
+              # Ensure manifest uses ic_launcher not (1)
+              if "ic_launcher(1)" in txt:
+                  txt = txt.replace("ic_launcher(1)", "ic_launcher")
+              man.write_text(txt)
+              print("Manifest fixed")
+          # 3. CRITICAL: Fix missing drawable/ic_pijatin_logo
+          # Check what mipmap-anydpi-v26/ic_launcher.xml contains
+          anydpi = res / "mipmap-anydpi-v26"
+          if anydpi.exists():
+              for xml in anydpi.glob("*.xml"):
+                  print(f"Reading {xml}")
+                  content = xml.read_text()
+                  print(content[:500])
+                  # If it references ic_pijatin_logo that doesn't exist, delete the folder
+                  # The app will fallback to regular mipmap icons (gold lotus png)
+                  if "ic_pijatin_logo" in content:
+                      draw = res / "drawable" / "ic_pijatin_logo.xml"
+                      if not draw.exists():
+                          # Check if there's png with that name
+                          png = res / "drawable" / "ic_pijatin_logo.png"
+                          if not png.exists():
+                              print("ic_pijatin_logo missing -> DELETING anydpi-v26 to fallback to PNG icons")
+                              shutil.rmtree(anydpi)
+                              break
+          # 4. If drawable folder doesn't have ic_pijatin_logo, create simple one
+          (res / "drawable").mkdir(exist_ok=True)
+          logo_xml = res / "drawable" / "ic_pijatin_logo.xml"
+          if not logo_xml.exists():
+              logo_xml.write_text('''<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108"><path android:fillColor="#D4AF37" android:pathData="M54,20L70,54L54,88L38,54Z"/></vector>''')
+              print("Created dummy ic_pijatin_logo.xml")
+          # 5. Restore gradlew
+          jar = pathlib.Path("gradle/wrapper/gradle-wrapper.jar")
+          if jar.is_dir():
+              shutil.rmtree(jar)
+          if jar.exists():
+              jar.unlink()
+          import urllib.request
+          pathlib.Path("gradle/wrapper").mkdir(parents=True, exist_ok=True)
+          try:
+              urllib.request.urlretrieve("https://raw.githubusercontent.com/gradle/gradle/v8.10.2/gradlew", "gradlew")
+              urllib.request.urlretrieve("https://github.com/gradle/gradle/raw/v8.10.2/gradle/wrapper/gradle-wrapper.jar", str(jar))
+          except Exception as e:
+              print(e)
+          pathlib.Path("gradle/wrapper/gradle-wrapper.properties").write_text("distributionBase=GRADLE_USER_HOME\ndistributionPath=wrapper/dists\ndistributionUrl=https\\://services.gradle.org/distributions/gradle-8.10.2-all.zip\nnetworkTimeout=10000\nvalidateDistributionUrl=true\nzipStoreBase=GRADLE_USER_HOME\nzipStorePath=wrapper/dists\n")
           os.chmod("gradlew", 0o755)
+          print("LIST ICONS AFTER FIX:")
+          for p in res.rglob("*ic_launcher*"):
+              print(p)
           PY
       - uses: actions/setup-java@v5
         with:
@@ -66,9 +85,9 @@ jobs:
       - uses: android-actions/setup-android@v3
       - name: Local props
         run: echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
-      - name: Build APK
+      - name: Build APK GOLD LOTUS
         run: ./gradlew app:assembleDebug --no-daemon
       - uses: actions/upload-artifact@v4
         with:
-          name: PijatIN-GOLD-APK-119-FIXED
+          name: PijatIN-GOLD-APK-120-FINAL
           path: app/build/outputs/apk/debug/*.apk
