@@ -3,55 +3,91 @@ on:
   push:
     branches: [ main ]
   workflow_dispatch:
-
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
+      - uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
+      - uses: android-actions/setup-android@v3
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Make gradlew executable + show project
+      - name: DIAGNOSE PROJECT
         run: |
-          chmod +x gradlew
+          echo "=== ROOT ==="
           ls -la
-          ls -la app/src/main/res/mipmap-xxxhdpi/ || true
-          echo "SDK: $ANDROID_HOME"
-          ./gradlew --version
+          echo "=== FIND GRADLEW ==="
+          find . -name "gradlew*" -type f 2>/dev/null | head -20
+          echo "=== ANDROID FOLDER ==="
+          ls -la android/ 2>&1 | head -50 || echo "NO android folder"
+          echo "=== APP FOLDER ==="
+          ls -la app/ 2>&1 | head -20 || echo "NO app folder"
+          echo "=== PACKAGE.JSON ==="
+          cat package.json 2>&1 | head -80 || echo "No package.json"
+          echo "=== PUBSPEC.YAML ==="
+          cat pubspec.yaml 2>&1 | head -80 || echo "No pubspec.yaml"
 
-      - name: Clean bad icons only
+      - name: Build APK - SMART DETECT
         run: |
-          rm -f app/src/main/res/drawable/ic_launcher.png || true
-          rm -f "app/src/main/res/drawable/ic_launcher (1).png" || true
-          rm -rf app/src/main/res/mipmap-anydpi-v26 || true
+          set -e
+          if [ -f android/gradlew ]; then
+            echo "Found android/gradlew - Building NATIVE"
+            chmod +x android/gradlew
+            cd android
+            ./gradlew app:assembleDebug --stacktrace
+            cd ..
+          elif [ -f gradlew ]; then
+            echo "Found gradlew at root"
+            chmod +x gradlew
+            ./gradlew app:assembleDebug --stacktrace
+          elif [ -f pubspec.yaml ]; then
+            echo "FLUTTER PROJECT DETECTED"
+            # Setup Flutter
+            git clone https://github.com/flutter/flutter.git -b stable --depth 1 /tmp/flutter
+            export PATH="/tmp/flutter/bin:$PATH"
+            flutter doctor
+            flutter pub get
+            flutter build apk --debug
+          elif grep -q "expo" package.json 2>/dev/null; then
+            echo "EXPO PROJECT DETECTED"
+            npm install -g eas-cli
+            npm install --legacy-peer-deps
+            npx expo prebuild --platform android --clean
+            chmod +x android/gradlew
+            cd android
+            ./gradlew app:assembleDebug --stacktrace
+            cd ..
+          else
+            echo "Trying npm android build"
+            npm install --legacy-peer-deps || true
+            npm run android -- --no-interactive || true
+            if [ -f android/gradlew ]; then
+              chmod +x android/gradlew
+              cd android
+              ./gradlew app:assembleDebug --stacktrace
+            fi
+          fi
 
-      - name: Build APK (will take 2-3 minutes)
-        run: |
-          ./gradlew app:assembleDebug --stacktrace --no-daemon --info | tail -n 200
-          echo "BUILD DONE"
-
-      - name: Find APKs
+      - name: Find APKs FINAL
         if: always()
         run: |
-          echo "Searching APKs..."
-          find . -name "*.apk" -type f
-          ls -R app/build/outputs/ || true
+          echo "=== SEARCH ALL APKs ==="
+          find . -name "*.apk" -type f -exec ls -lh {} \; 2>/dev/null || echo "No APKs found anywhere"
+          echo "=== BUILD OUTPUTS ==="
+          ls -R android/app/build/outputs/ 2>&1 | tail -100 || true
+          ls -R app/build/outputs/ 2>&1 | tail -100 || true
+          ls -R build/ 2>&1 | tail -50 || true
 
-      - name: Upload GOLD APK FINAL
+      - name: Upload GOLD APK
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: PijatIN-GOLD-APK-104-FINAL
+          name: PijatIN-GOLD-APK-106-FINAL
           path: |
-            app/build/outputs/apk/debug/*.apk
-            app/build/outputs/apk/**/*.apk
             **/*.apk
+            android/app/build/outputs/apk/debug/*.apk
+            app/build/outputs/apk/debug/*.apk
+            build/app/outputs/flutter-apk/*.apk
           if-no-files-found: warn
