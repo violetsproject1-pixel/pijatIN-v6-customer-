@@ -9,52 +9,39 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Check gradlew size
+      - name: RESTORE GRADLEW + JAR OFFICIAL (bypass wrapper task)
         run: |
-          ls -lh gradlew gradlew.bat || true
-          wc -c gradlew || echo "no gradlew"
-          if [ $(wc -c < gradlew) -lt 100 ]; then
-            echo "CORRUPTED! Need restore"
-          fi
-
-      - name: Restore gradlew via Gradle official
-        if: always()
-        run: |
-          # Download gradle and generate wrapper
-          wget -q https://services.gradle.org/distributions/gradle-8.7-bin.zip -O /tmp/gradle.zip
-          unzip -q /tmp/gradle.zip -d /tmp
-          export PATH=/tmp/gradle-8.7/bin:$PATH
-          gradle --version
-          # Backup corrupted files
-          rm -f gradlew gradlew.bat
-          # Generate new wrapper
-          gradle wrapper --gradle-version 8.7
+          echo "=== BEFORE ==="
+          ls -lh gradlew gradle/wrapper/ || true
+          wc -c gradlew gradle/wrapper/gradle-wrapper.jar 2>&1 || true
+          rm -f gradlew gradlew.bat gradle/wrapper/gradle-wrapper.jar
+          mkdir -p gradle/wrapper
+          echo "Downloading official gradlew..."
+          curl -sL https://raw.githubusercontent.com/gradle/gradle/v8.7.0/gradlew -o gradlew
+          curl -sL https://raw.githubusercontent.com/gradle/gradle/v8.7.0/gradle/wrapper/gradle-wrapper.jar -o gradle/wrapper/gradle-wrapper.jar
+          curl -sL https://raw.githubusercontent.com/gradle/gradle/v8.7.0/gradle/wrapper/gradle-wrapper.properties -o gradle/wrapper/gradle-wrapper.properties || true
           chmod +x gradlew
-          ls -lh gradlew gradlew.bat
-          head -20 gradlew
+          echo "=== AFTER ==="
+          ls -lh gradlew gradle/wrapper/
+          head -5 gradlew
 
       - uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
-          cache: gradle
 
       - uses: android-actions/setup-android@v3
 
-      - name: Build APK REAL 4m
-        run: |
-          ./gradlew app:assembleDebug --stacktrace
+      - name: Build REAL APK 4m
+        run: ./gradlew app:assembleDebug --stacktrace --no-daemon
 
       - name: Find APKs
         if: always()
-        run: |
-          find . -name "*.apk" -type f -exec ls -lh {} \; || true
-          ls -lh app/build/outputs/apk/debug/ || true
+        run: find . -type f -name "*.apk" -exec ls -lh {} \;
 
-      - name: Upload
+      - name: Upload GOLD APK
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: PijatIN-GOLD-APK-109-FINAL
+          name: PijatIN-GOLD-APK-110-FINAL
           path: app/build/outputs/apk/debug/*.apk
-          if-no-files-found: warn
