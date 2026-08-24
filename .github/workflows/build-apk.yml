@@ -8,38 +8,27 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Fix ic_launcher(1) bug and restore gradlew
+      - name: Fix icon (1) bug - SUPER ROBUST
         run: |
-          echo "=== BEFORE ==="
-          find app/src/main/res -name "ic_launcher*" 2>/dev/null | head -20
-          # Fix (1) files from Chrome download
-          for f in app/src/main/res/mipmap-*/ic_launcher*\(*\)*; do
-            [ -e "$f" ] || continue
-            d=$(dirname "$f")
-            # ic_launcher(1).png -> ic_launcher.png , ic_launcher_round(1) -> ic_launcher_round
-            n=$(basename "$f" | sed 's/(1)//g' | sed 's/(2)//g' | tr -d ' ')
-            echo "Rename $f -> $d/$n"
-            mv "$f" "$d/$n"
+          echo "FIND ALL BAD ICONS"
+          find app/src/main/res -name "*ic_launcher*" -type f || true
+          echo "--- MANIFEST BEFORE ---"
+          cat app/src/main/AndroidManifest.xml | head -20
+          # 1. Rename all files with (1) (2) etc to clean name
+          find app/src/main/res -type f -name "*(*)*" | while read f; do
+            clean=$(echo "$f" | sed 's/(1)//g; s/(2)//g; s/(3)//g; s/ //g')
+            echo "Fix $f -> $clean"
+            mv "$f" "$clean" 2>/dev/null || mv "$f" "$(dirname $f)/$(basename $f | tr -d '()1 2 3')" || true
           done
-          # Ensure icons exist in at least mdpi
-          mkdir -p app/src/main/res/mipmap-hdpi app/src/main/res/mipmap-mdpi
-          # If still no ic_launcher, create placeholder via curl from previous gold lotus or use default
-          if [ ! -f app/src/main/res/mipmap-mdpi/ic_launcher.png ]; then
-            echo "Creating fallback icons..."
-            # Use any existing icon as source
-            SRC=$(find app/src/main/res -name "ic_launcher.png" | head -1)
-            if [ -n "$SRC" ]; then
-              for D in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
-                mkdir -p app/src/main/res/mipmap-$D
-                cp "$SRC" app/src/main/res/mipmap-$D/ic_launcher.png 2>/dev/null || true
-                cp "$SRC" app/src/main/res/mipmap-$D/ic_launcher_round.png 2>/dev/null || true
-              done
-            fi
-          fi
-          echo "=== AFTER ==="
-          find app/src/main/res -name "ic_launcher*" | head -20
-          # Restore gradlew 3 files
+          # 2. Fix Manifest if it references (1)
+          sed -i 's/ic_launcher(1)/ic_launcher/g' app/src/main/AndroidManifest.xml || true
+          sed -i 's/ic_launcher_round(1)/ic_launcher_round/g' app/src/main/AndroidManifest.xml || true
+          echo "--- MANIFEST AFTER ---"
+          cat app/src/main/AndroidManifest.xml | head -20
+          echo "--- ICONS AFTER ---"
+          find app/src/main/res -name "*ic_launcher*" -type f
+          # 3. Restore gradlew 3 files
+          rm -f gradle/wrapper/gradle-wrapper.jar
           rm -rf gradle/wrapper/gradle-wrapper.jar
           mkdir -p gradle/wrapper
           curl -sL https://raw.githubusercontent.com/gradle/gradle/v8.10.2/gradlew -o gradlew
@@ -52,23 +41,17 @@ jobs:
           echo "zipStoreBase=GRADLE_USER_HOME" >> gradle/wrapper/gradle-wrapper.properties
           echo "zipStorePath=wrapper/dists" >> gradle/wrapper/gradle-wrapper.properties
           chmod +x gradlew
-          ./gradlew --version
-
       - uses: actions/setup-java@v5
         with:
           java-version: '17'
           distribution: temurin
-
       - uses: android-actions/setup-android@v3
-
-      - name: Make local.properties
+      - name: Local props
         run: echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
-
-      - name: Build APK Gold Lotus
-        run: ./gradlew app:assembleDebug --no-daemon
-
+      - name: Build APK
+        run: ./gradlew app:assembleDebug --no-daemon --stacktrace
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: PijatIN-GOLD-APK-114-FINAL
+          name: PijatIN-GOLD-APK-118-FIXED
           path: app/build/outputs/apk/debug/*.apk
