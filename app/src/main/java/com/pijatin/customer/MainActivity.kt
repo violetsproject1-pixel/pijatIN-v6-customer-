@@ -120,38 +120,3 @@ var email by remember{mutableStateOf("malikysyachmal2018@gmail.com")}
 var p1 by remember{mutableStateOf("")}
 var p2 by remember{mutableStateOf("")}
 val focusManager=LocalFocusManager.current
-val keyboardController=LocalSoftwareKeyboardController.current
-val isFormValid = hp.length>=10 && email.contains("@") && p1.length>=6 && p1==p2
-Scaffold(bottomBar={
-Column(Modifier.fillMaxWidth().background(Color.White).padding(16.dp).imePadding()){
-Button(onClick={
-if(!isFormValid){Toast.makeText(ctx,"Lengkapi data!",Toast.LENGTH_SHORT).show();return@Button}
-prefs.edit().apply{putBoolean("isLoggedIn",true); putString("phone",hp); putString("email",email); putString("password",p1); apply()}
-Toast.makeText(ctx,"✅ DAFTAR BERHASIL! Masuk Home...",Toast.LENGTH_LONG).show()
-savedPhone=hp; savedEmail=email; isLoggedIn=true; keyboardController?.hide()
-}, modifier=Modifier.fillMaxWidth().height(56.dp), enabled=isFormValid, colors=ButtonDefaults.buttonColors(containerColor=Green, disabledContainerColor=Color.Gray), shape=RoundedCornerShape(14.dp)){
-Text(if(isFormValid)"DAFTAR SEKARANG ✅"else"ISI DATA DULU", color=Color.White, fontWeight=FontWeight.Bold, fontSize=16.sp)
-}
-}
-}){ padding ->
-LazyColumn(Modifier.fillMaxSize().background(Color(0xFFF5F5F5)).padding(padding).padding(16.dp).imePadding()){
-item{
-Text("Daftar #136 Harga Baru", fontWeight=FontWeight.Bold, fontSize=22.sp, color=Green)
-Text("FIX HIJAU + TRADISIONAL 120k/60m REFLEKSI 100k/75m AROMA FULL BODY 135k/60m TRAD+KEROKAN 135k/75m", fontSize=8.sp, color=Orange, fontWeight=FontWeight.Bold)
-Spacer(Modifier.height(24.dp))
-OutlinedTextField(value=hp, onValueChange={hp=it}, label={Text("No Telepon *")}, modifier=Modifier.fillMaxWidth(), shape=RoundedCornerShape(12.dp), keyboardOptions=KeyboardOptions(keyboardType=KeyboardType.Phone, imeAction=ImeAction.Next), keyboardActions=KeyboardActions(onNext={focusManager.moveFocus(FocusDirection.Down)}), singleLine=true)
-Spacer(Modifier.height(12.dp))
-OutlinedTextField(value=email, onValueChange={email=it}, label={Text("Email *")}, modifier=Modifier.fillMaxWidth(), shape=RoundedCornerShape(12.dp), keyboardOptions=KeyboardOptions(keyboardType=KeyboardType.Email, imeAction=ImeAction.Next), keyboardActions=KeyboardActions(onNext={focusManager.moveFocus(FocusDirection.Down)}), singleLine=true)
-Spacer(Modifier.height(12.dp))
-OutlinedTextField(value=p1, onValueChange={p1=it}, label={Text("Password *")}, visualTransformation=PasswordVisualTransformation(), modifier=Modifier.fillMaxWidth(), shape=RoundedCornerShape(12.dp), keyboardOptions=KeyboardOptions(keyboardType=KeyboardType.Password, imeAction=ImeAction.Next), keyboardActions=KeyboardActions(onNext={focusManager.moveFocus(FocusDirection.Down)}), singleLine=true)
-Spacer(Modifier.height(12.dp))
-OutlinedTextField(value=p2, onValueChange={p2=it}, label={Text("Konfirmasi Password *")}, visualTransformation=PasswordVisualTransformation(), modifier=Modifier.fillMaxWidth(), shape=RoundedCornerShape(12.dp), keyboardOptions=KeyboardOptions(keyboardType=KeyboardType.Password, imeAction=ImeAction.Done), keyboardActions=KeyboardActions(onDone={focusManager.clearFocus(); keyboardController?.hide()}), singleLine=true)
-if(p2.isNotEmpty()){Spacer(Modifier.height(8.dp)); Text(if(p1==p2)"✅ Password cocok"else"❌ Tidak sama", color=if(p1==p2)Color(0xFF4CAF50)else Color.Red, fontSize=12.sp, fontWeight=FontWeight.Bold)}
-Spacer(Modifier.height(100.dp))
-}
-}
-}
-}
-}
-}
-}
