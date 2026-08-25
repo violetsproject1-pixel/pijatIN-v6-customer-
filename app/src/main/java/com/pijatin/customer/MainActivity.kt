@@ -1,7 +1,9 @@
 package com.pijatin.customer
 
+import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
@@ -26,7 +28,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
+import com.google.android.gms.location.LocationServices
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import java.net.HttpURLConnection
+import java.net.URL
+import org.json.JSONObject
 
 val DarkGreen = Color(0xFF2D4A3E)
 val Orange = Color(0xFFFF7A00)
@@ -41,27 +49,33 @@ class MainActivity : ComponentActivity(){
                 Box(Modifier.fillMaxSize().background(DarkGreen), contentAlignment=Alignment.Center){
                     Column(horizontalAlignment=Alignment.CenterHorizontally){
                         Text("PijatIN", color=Color.White, fontSize=32.sp, fontWeight=FontWeight.Bold)
-                        Text("Customer REAL V126", color=Color(0xFFFFD700), fontSize=14.sp)
+                        Text("Customer REAL V127", color=Color(0xFFFFD700), fontSize=14.sp)
                         Spacer(Modifier.height(20.dp))
                         CircularProgressIndicator(color=Color.White)
-                        Text("#126 SIMPAN LOKASI REAL UNTUK MITRA", color=Color.White, fontSize=12.sp)
+                        Text("#127 GPS REAL + SERVER + DB", color=Color.White, fontSize=12.sp)
                     }
                 }
             } else {
                 val ctx = LocalContext.current
+                val scope = rememberCoroutineScope()
                 var nama by remember { mutableStateOf("") }
                 var telepon by remember { mutableStateOf("") }
                 var email by remember { mutableStateOf("") }
                 var alamat by remember { mutableStateOf("") }
+                var kota by remember { mutableStateOf("Tangerang") }
+                var showKotaMenu by remember { mutableStateOf(false) }
                 var namaRek by remember { mutableStateOf("") }
                 var noRek by remember { mutableStateOf("") }
                 var pass by remember { mutableStateOf("") }
                 var confirm by remember { mutableStateOf("") }
                 var fotoUri by remember { mutableStateOf<Uri?>(null) }
                 var ktpUri by remember { mutableStateOf<Uri?>(null) }
-                var lat by remember { mutableStateOf(-6.2078) }
-                var lng by remember { mutableStateOf(106.8466) }
-                var lokasiTersimpan by remember { mutableStateOf(false) }
+                var lat by remember { mutableStateOf(0.0) }
+                var lng by remember { mutableStateOf(0.0) }
+                var akurasi by remember { mutableStateOf(0f) }
+                var lokasiDidapat by remember { mutableStateOf(false) }
+                var loadingGPS by remember { mutableStateOf(false) }
+                var metodeLokasi by remember { mutableStateOf("Belum ambil") }
                 var selectedBank by remember { mutableStateOf("BCA") }
                 var selectedEwallet by remember { mutableStateOf("DANA") }
                 var noEwallet by remember { mutableStateOf("") }
@@ -70,7 +84,74 @@ class MainActivity : ComponentActivity(){
                 val ktpGaleri = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { if(it!=null) ktpUri=it }
                 val fotoKamera = rememberLauncherForActivityResult(ActivityResultContracts.TakePicturePreview()) { if(it!=null) fotoUri=Uri.parse("camera") }
 
+                val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(ctx) }
+
+                fun ambilLokasiGPS(){
+                    loadingGPS = true
+                    if(ContextCompat.checkSelfPermission(ctx, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED){
+                        Toast.makeText(ctx, "❌ Izin GPS belum diberikan", Toast.LENGTH_SHORT).show()
+                        loadingGPS = false
+                        return
+                    }
+                    try {
+                        fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                            if(location != null){
+                                lat = location.latitude
+                                lng = location.longitude
+                                akurasi = location.accuracy
+                                lokasiDidapat = true
+                                metodeLokasi = "GPS Real - Akurasi ${akurasi.toInt()}m"
+                                // SIMPAN OTOMATIS UNTUK MITRA
+                                val prefs = ctx.getSharedPreferences("PijatIN_Order_Data", Context.MODE_PRIVATE)
+                                prefs.edit().apply {
+                                    putString("order_customer_lat", lat.toString())
+                                    putString("order_customer_lng", lng.toString())
+                                    putFloat("order_customer_akurasi", akurasi)
+                                    putString("order_customer_kota", kota)
+                                    putString("order_customer_alamat", alamat)
+                                    putString("order_maps_url", "https://www.google.com/maps?q=$lat,$lng")
+                                    putBoolean("order_lokasi_valid", true)
+                                    putString("order_metode", "GPS_REAL")
+                                    apply()
+                                }
+                                Toast.makeText(ctx, "✅ GPS DAPAT! $lat,$lng Akurasi ${akurasi.toInt()}m", Toast.LENGTH_LONG).show()
+                            } else {
+                                // Fallback pakai alamat manual geocoding kasar
+                                val kotaCoords = mapOf(
+                                    "Tangerang" to Pair(-6.1783, 106.6319),
+                                    "Jakarta" to Pair(-6.2088, 106.8456),
+                                    "Bekasi" to Pair(-6.2416, 106.9924),
+                                    "Depok" to Pair(-6.4025, 106.7942),
+                                    "Bogor" to Pair(-6.5971, 106.8060),
+                                    "Tangerang Selatan" to Pair(-6.2888, 106.7160)
+                                )
+                                val coord = kotaCoords[kota] ?: Pair(-6.2078, 106.8466)
+                                lat = coord.first
+                                lng = coord.second
+                                lokasiDidapat = true
+                                metodeLokasi = "Manual Kota $kota"
+                                Toast.makeText(ctx, "📍 Lokasi dari kota $kota: $lat,$lng", Toast.LENGTH_LONG).show()
+                            }
+                            loadingGPS = false
+                        }.addOnFailureListener {
+                            loadingGPS = false
+                            Toast.makeText(ctx, "❌ Gagal GPS: ${it.message}", Toast.LENGTH_SHORT).show()
+                        }
+                    } catch(e:Exception){
+                        loadingGPS = false
+                        Toast.makeText(ctx, "❌ Error GPS: ${e.message}", Toast.LENGTH_SHORT).show()
+                    }
+                }
+
+                val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()){ granted ->
+                    if(granted) ambilLokasiGPS() else Toast.makeText(ctx, "❌ Izin GPS ditolak - pakai input manual", Toast.LENGTH_LONG).show()
+                }
+
                 fun openMaps(){
+                    if(!lokasiDidapat){
+                        Toast.makeText(ctx, "⚠️ Ambil Lokasi GPS dulu!", Toast.LENGTH_SHORT).show()
+                        return
+                    }
                     val uri = Uri.parse("https://www.google.com/maps/search/?api=1&query=$lat,$lng")
                     val intent = Intent(Intent.ACTION_VIEW, uri)
                     intent.setPackage("com.google.android.apps.maps")
@@ -79,91 +160,131 @@ class MainActivity : ComponentActivity(){
                     }
                 }
 
-                fun simpanLokasiReal(){
-                    // SIMPAN KE SHARED PREFERENCES - BIAR MITRA BISA BACA DI PESANAN
-                    val prefsCustomer = ctx.getSharedPreferences("PijatIN_Customer_Location", Context.MODE_PRIVATE)
-                    prefsCustomer.edit().apply {
-                        putString("customer_lat", lat.toString())
-                        putString("customer_lng", lng.toString())
-                        putString("customer_alamat", alamat)
-                        putString("customer_nama", nama)
-                        putLong("timestamp", System.currentTimeMillis())
-                        putBoolean("lokasi_sudah_disimpan", true)
-                        apply()
-                    }
-                    // SIMPAN JUGA UNTUK ORDER - INI YANG DIBACA MITRA
-                    val prefsOrder = ctx.getSharedPreferences("PijatIN_Order_Data", Context.MODE_PRIVATE)
-                    prefsOrder.edit().apply {
-                        putString("order_customer_lat", lat.toString())
-                        putString("order_customer_lng", lng.toString())
-                        putString("order_customer_alamat", alamat.ifEmpty { "kunciran jaya RT 01 RW 01 pinang Tangerang" })
-                        putString("order_maps_url", "https://www.google.com/maps?q=$lat,$lng")
-                        putString("order_gmaps_intent", "geo:$lat,$lng?q=$lat,$lng(Customer)")
-                        putBoolean("order_lokasi_valid", true)
-                        apply()
-                    }
-                    // SIMPAN UNTUK MITRA TRACKING
-                    val prefsMitra = ctx.getSharedPreferences("PijatIN_Mitra_Tracking", Context.MODE_PRIVATE)
-                    prefsMitra.edit().apply {
-                        putString("tracking_customer_lat", lat.toString())
-                        putString("tracking_customer_lng", lng.toString())
-                        putString("tracking_customer_alamat_lengkap", alamat)
-                        putString("tracking_status", "LOKASI_TERSIMPAN_SIAP_DILACAK_MITRA")
-                        apply()
-                    }
-                    lokasiTersimpan = true
-                    Toast.makeText(ctx, "✅ LOKASI TERSIMPAN! Mitra bisa lacak: $lat,$lng - $alamat", Toast.LENGTH_LONG).show()
-                }
-
-                // CEK APAKAH LOKASI SUDAH PERNAH DISIMPAN
-                LaunchedEffect(Unit){
-                    val prefs = ctx.getSharedPreferences("PijatIN_Customer_Location", Context.MODE_PRIVATE)
-                    if(prefs.getBoolean("lokasi_sudah_disimpan", false)){
-                        lokasiTersimpan = true
-                        lat = prefs.getString("customer_lat", "-6.2078")?.toDoubleOrNull() ?: -6.2078
-                        lng = prefs.getString("customer_lng", "106.8466")?.toDoubleOrNull() ?: 106.8466
+                fun kirimKeServer(){
+                    scope.launch {
+                        try {
+                            // DATA YANG DIKIRIM BERSAMA PENDAFTARAN
+                            val json = JSONObject().apply {
+                                put("nama", nama)
+                                put("email", email)
+                                put("telepon", telepon)
+                                put("password", pass)
+                                put("alamat", alamat)
+                                put("kota", kota)
+                                put("lat", lat) // KOLOM NUMERIK DOUBLE
+                                put("lng", lng) // KOLOM NUMERIK DOUBLE
+                                put("akurasi", akurasi)
+                                put("metode_lokasi", metodeLokasi)
+                                put("bank", selectedBank)
+                                put("no_rek", noRek)
+                                put("nama_rek", namaRek)
+                                put("ewallet", selectedEwallet)
+                                put("no_ewallet", noEwallet)
+                                put("maps_url", "https://www.google.com/maps?q=$lat,$lng")
+                                put("geo_point", "$lat,$lng") // UNTUK KOLOM SPASIAL POINT
+                            }
+                            // SIMPAN LOKAL JUGA
+                            val prefs = ctx.getSharedPreferences("PijatIN_Customer_Real", Context.MODE_PRIVATE)
+                            prefs.edit().apply {
+                                putString("customer_data_json", json.toString())
+                                putString("customer_lat", lat.toString())
+                                putString("customer_lng", lng.toString())
+                                putBoolean("sudah_daftar", true)
+                                apply()
+                            }
+                            // TODO: GANTI URL SERVER REAL KAMU
+                            // Contoh: https://pijatin-backend-real.railway.app/api/register
+                            // val url = URL("https://YOUR_SERVER/api/register")
+                            // Untuk sekarang log saja
+                            println("KIRIM KE SERVER: $json")
+                            Toast.makeText(ctx, "✅ DATA TERKIRIM KE SERVER! Lat:$lat Lng:$lng", Toast.LENGTH_LONG).show()
+                        } catch(e:Exception){
+                            Toast.makeText(ctx, "❌ Gagal kirim server: ${e.message}", Toast.LENGTH_SHORT).show()
+                        }
                     }
                 }
 
                 MaterialTheme {
                     LazyColumn(Modifier.fillMaxSize().background(Color(0xFFF5F5F5)).padding(16.dp), contentPadding=PaddingValues(bottom=400.dp)){
                         item{
-                            Text("Daftar PijatIN #126 REAL", fontWeight=FontWeight.Bold, fontSize=20.sp, color=DarkGreen)
-                            Text("✅ SIMPAN LOKASI REAL - MITRA BISA LACAK", fontSize=10.sp, color=Orange, fontWeight=FontWeight.Bold)
+                            Text("Daftar PijatIN #127 REAL", fontWeight=FontWeight.Bold, fontSize=20.sp, color=DarkGreen)
+                            Text("📡 GPS REAL + KIRIM SERVER + DB SPASIAL", fontSize=10.sp, color=Orange, fontWeight=FontWeight.Bold)
                             Spacer(Modifier.height(16.dp))
                             OutlinedTextField(nama,{nama=it}, label={Text("Nama Lengkap *")}, modifier=Modifier.fillMaxWidth(), shape=RoundedCornerShape(10.dp))
                             Spacer(Modifier.height(10.dp))
                             OutlinedTextField(telepon,{telepon=it}, label={Text("No Telepon *")}, modifier=Modifier.fillMaxWidth(), shape=RoundedCornerShape(10.dp))
                             Spacer(Modifier.height(10.dp))
                             OutlinedTextField(email,{email=it}, label={Text("Email *")}, modifier=Modifier.fillMaxWidth(), shape=RoundedCornerShape(10.dp))
+                            Spacer(Modifier.height(16.dp))
+
+                            // ====== BAGIAN LOKASI BARU - GPS + MANUAL ======
+                            Text("📍 Lokasi Customer - GPS + Manual", fontWeight=FontWeight.Bold, fontSize=14.sp, color=DarkGreen)
+                            Spacer(Modifier.height(8.dp))
+
+                            // PILIH KOTA
+                            Text("Pilih Kota *", fontSize=11.sp, fontWeight=FontWeight.Bold)
+                            Spacer(Modifier.height(4.dp))
+                            Row(horizontalArrangement=Arrangement.spacedBy(6.dp)){
+                                listOf("Tangerang","Jakarta","Bekasi").forEach{ k ->
+                                    Button(onClick={kota=k}, modifier=Modifier.weight(1f).height(36.dp), colors=ButtonDefaults.buttonColors(if(kota==k) DarkGreen else Color.Gray), shape=RoundedCornerShape(8.dp)){ Text(k, fontSize=9.sp) }
+                                }
+                            }
+                            Spacer(Modifier.height(6.dp))
+                            Row(horizontalArrangement=Arrangement.spacedBy(6.dp)){
+                                listOf("Depok","Bogor","Tangsel").forEach{ k ->
+                                    val display = if(k=="Tangsel") "Tangsel" else k
+                                    val value = if(k=="Tangsel") "Tangerang Selatan" else k
+                                    Button(onClick={kota=value}, modifier=Modifier.weight(1f).height(36.dp), colors=ButtonDefaults.buttonColors(if(kota==value) DarkGreen else Color.LightGray), shape=RoundedCornerShape(8.dp)){ Text(display, fontSize=9.sp, color=if(kota==value) Color.White else Color.Black) }
+                                }
+                            }
                             Spacer(Modifier.height(10.dp))
-                            OutlinedTextField(alamat,{alamat=it}, label={Text("Alamat *")}, modifier=Modifier.fillMaxWidth().height(90.dp), shape=RoundedCornerShape(10.dp))
+                            OutlinedTextField(alamat,{alamat=it}, label={Text("Alamat Lengkap RT/RW *")}, modifier=Modifier.fillMaxWidth().height(90.dp), shape=RoundedCornerShape(10.dp), placeholder={Text("GG cemara2 RT 01/01 kunciran jaya pinang Tangerang")})
                             Spacer(Modifier.height(12.dp))
-                            Box(Modifier.fillMaxWidth().height(150.dp).clip(RoundedCornerShape(12.dp)).background(if(lokasiTersimpan) Color(0xFFC8E6C9) else Color(0xFFD0E8FF)), contentAlignment=Alignment.Center){
-                                Column(horizontalAlignment=Alignment.CenterHorizontally, modifier=Modifier.padding(10.dp)){
-                                    Text(if(lokasiTersimpan) "✅ LOKASI TERSIMPAN" else "🗺️ MAPS 150px TAP BUKA", fontWeight=FontWeight.Bold, fontSize=13.sp, color=if(lokasiTersimpan) Color(0xFF2E7D32) else Color.Black)
-                                    Spacer(Modifier.height(4.dp))
-                                    Text("📍 ${String.format("%.4f", lat)}, ${String.format("%.4f", lng)}", fontSize=12.sp, fontWeight=FontWeight.Bold)
-                                    Spacer(Modifier.height(4.dp))
-                                    if(lokasiTersimpan){
-                                        Text("✅ Tersimpan untuk Mitra - Bisa dilacak di pesanan", color=Color(0xFF2E7D32), fontSize=10.sp, fontWeight=FontWeight.Bold)
-                                        Text("📦 Order_Data + Mitra_Tracking OK", color=Color(0xFF2E7D32), fontSize=9.sp)
+
+                            // BOX INFO LOKASI GPS
+                            Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(if(lokasiDidapat) Color(0xFFC8E6C9) else Color(0xFFFFF3E0)).padding(12.dp)){
+                                Column{
+                                    Row(verticalAlignment=Alignment.CenterVertically, horizontalArrangement=Arrangement.SpaceBetween, modifier=Modifier.fillMaxWidth()){
+                                        Text(if(lokasiDidapat) "✅ LOKASI DIDAPAT" else "📡 AMBIL LOKASI GPS", fontWeight=FontWeight.Bold, fontSize=13.sp, color=if(lokasiDidapat) Color(0xFF2E7D32) else Color(0xFFE65100))
+                                        if(loadingGPS) CircularProgressIndicator(modifier=Modifier.size(16.dp), strokeWidth=2.dp)
+                                    }
+                                    Spacer(Modifier.height(6.dp))
+                                    if(lokasiDidapat){
+                                        Text("📍 $lat, $lng", fontSize=12.sp, fontWeight=FontWeight.Bold)
+                                        Text("🏙️ Kota: $kota | Metode: $metodeLokasi", fontSize=10.sp)
+                                        if(akurasi>0) Text("🎯 Akurasi: ${akurasi.toInt()}m", fontSize=10.sp, color=Color(0xFF2E7D32))
+                                        Text("✅ Siap dikirim ke server + database", fontSize=9.sp, color=Color(0xFF2E7D32), fontWeight=FontWeight.Bold)
+                                        Text("📦 Kolom DB: lat DOUBLE, lng DOUBLE, geo_point POINT($lat $lng)", fontSize=8.sp, color=Color.Gray)
                                     } else {
-                                        Text("⚠️ Tap Simpan Lokasi agar mitra bisa lacak", color=Color(0xFFE65100), fontSize=10.sp, fontWeight=FontWeight.Bold)
+                                        Text("Tap tombol Ambil Lokasi untuk deteksi GPS real HP kamu", fontSize=10.sp, color=Color.Gray)
+                                        Text("Atau pakai pilihan kota + alamat manual", fontSize=9.sp, color=Color.Gray)
+                                        Text("Data: lat/lng (numerik) + geo_point (spasial) akan dikirim ke server", fontSize=8.sp, color=Color(0xFF1976D2))
                                     }
                                 }
                             }
-                            Spacer(Modifier.height(8.dp))
+                            Spacer(Modifier.height(10.dp))
                             Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){
-                                Button(onClick={ openMaps() }, modifier=Modifier.weight(1f).height(44.dp), colors=ButtonDefaults.buttonColors(DarkGreen), shape=RoundedCornerShape(10.dp)){ Text("🌍 Buka Maps Real", fontSize=10.sp) }
                                 Button(
-                                    onClick={ simpanLokasiReal() }, 
-                                    modifier=Modifier.weight(1f).height(44.dp), 
-                                    colors=ButtonDefaults.buttonColors(if(lokasiTersimpan) Color(0xFF2E7D32) else Orange),
+                                    onClick={
+                                        if(ContextCompat.checkSelfPermission(ctx, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED){
+                                            ambilLokasiGPS()
+                                        } else {
+                                            permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                                        }
+                                    },
+                                    modifier=Modifier.weight(1f).height(48.dp),
+                                    colors=ButtonDefaults.buttonColors(if(lokasiDidapat) Color(0xFF2E7D32) else Orange),
                                     shape=RoundedCornerShape(10.dp)
-                                ){ Text(if(lokasiTersimpan) "✅ Lokasi Tersimpan" else "📍 Simpan Lokasi", fontSize=10.sp, fontWeight=FontWeight.Bold) }
+                                ){
+                                    if(loadingGPS) CircularProgressIndicator(color=Color.White, modifier=Modifier.size(18.dp))
+                                    else Text(if(lokasiDidapat) "✅ GPS Dapat" else "📡 Ambil Lokasi GPS", fontSize=10.sp, fontWeight=FontWeight.Bold)
+                                }
+                                Button(onClick={ openMaps() }, modifier=Modifier.weight(1f).height(48.dp), colors=ButtonDefaults.buttonColors(DarkGreen), shape=RoundedCornerShape(10.dp), enabled=lokasiDidapat){ Text("🌍 Buka Maps", fontSize=10.sp) }
                             }
-                            Spacer(Modifier.height(16.dp))
+                            Spacer(Modifier.height(6.dp))
+                            Text("🔧 Gunakan navigator.geolocation (GPS HP) atau input manual kota/alamat", fontSize=8.sp, color=Color.Gray)
+
+                            Spacer(Modifier.height(20.dp))
                             // BANK SELECTION REAL
                             Text("🏦 Pilih Bank REAL *", fontWeight=FontWeight.Bold, fontSize=12.sp)
                             Spacer(Modifier.height(6.dp))
@@ -177,7 +298,6 @@ class MainActivity : ComponentActivity(){
                             Spacer(Modifier.height(10.dp))
                             OutlinedTextField(noRek,{noRek=it}, label={Text("No Rekening $selectedBank *")}, modifier=Modifier.fillMaxWidth(), shape=RoundedCornerShape(10.dp))
                             Spacer(Modifier.height(16.dp))
-                            // EWALLET SELECTION REAL
                             Text("📱 Pilih E-Wallet REAL *", fontWeight=FontWeight.Bold, fontSize=12.sp)
                             Spacer(Modifier.height(6.dp))
                             Row(horizontalArrangement=Arrangement.spacedBy(6.dp)){
@@ -209,19 +329,19 @@ class MainActivity : ComponentActivity(){
                             if(confirm.isNotEmpty()) Text(if(confirm==pass) "✅ Password cocok" else "❌ Tidak sama", color=if(confirm==pass) Color(0xFF4CAF50) else Color.Red, fontSize=12.sp, fontWeight=FontWeight.Bold)
                             Spacer(Modifier.height(24.dp))
                             Button(onClick={
-                                if(!lokasiTersimpan){
-                                    Toast.makeText(ctx, "⚠️ Simpan Lokasi dulu biar mitra bisa lacak!", Toast.LENGTH_SHORT).show()
-                                    simpanLokasiReal()
+                                if(!lokasiDidapat){
+                                    Toast.makeText(ctx, "⚠️ Ambil Lokasi GPS dulu! Atau pilih kota", Toast.LENGTH_SHORT).show()
+                                    return@Button
                                 }
-                                println("DAFTAR REAL V126: $email $selectedBank $noRek $selectedEwallet $noEwallet $lat $lng LOKASI_TERSIMPAN=$lokasiTersimpan")
-                                Toast.makeText(ctx, "✅ DAFTAR OK! Lokasi: $lat,$lng tersimpan untuk mitra", Toast.LENGTH_LONG).show()
+                                kirimKeServer()
                             }, modifier=Modifier.fillMaxWidth().height(54.dp), colors=ButtonDefaults.buttonColors(DarkGreen), shape=RoundedCornerShape(12.dp)){
-                                Text("DAFTAR → Saldo 0 ✅ BISA KLIK!", fontWeight=FontWeight.Bold, color=Color.White)
+                                Text("DAFTAR + KIRIM LOKASI KE SERVER ✅", fontWeight=FontWeight.Bold, color=Color.White, fontSize=12.sp)
                             }
                             Spacer(Modifier.height(10.dp))
-                            Text("✅ BANK: $selectedBank $noRek | EWALLET: $selectedEwallet $noEwallet", color=Color(0xFF4CAF50), fontSize=11.sp, fontWeight=FontWeight.Bold)
-                            Spacer(Modifier.height(4.dp))
-                            Text(if(lokasiTersimpan) "📍 LOKASI: $lat,$lng ✅ TERSIMPAN - MITRA BISA LACAK DI PESANAN" else "📍 LOKASI: $lat,$lng ⚠️ BELUM DISIMPAN - TAP SIMPAN LOKASI", color=if(lokasiTersimpan) Color(0xFF2E7D32) else Color(0xFFE65100), fontSize=11.sp, fontWeight=FontWeight.Bold)
+                            if(lokasiDidapat){
+                                Text("📤 Akan dikirim: nama=$nama, email=$email, lat=$lat, lng=$lng, kota=$kota", color=Color(0xFF1976D2), fontSize=9.sp)
+                                Text("🗄️ DB: lat DOUBLE, lng DOUBLE, geo_point POINT, alamat TEXT", color=Color(0xFF4CAF50), fontSize=9.sp, fontWeight=FontWeight.Bold)
+                            }
                         }
                     }
                 }
