@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 val Green = Color(0xFF2D4A3E)
 val Orange = Color(0xFFFF7A00)
+data class Layanan(val emoji:String, val nama:String, val harga:String, val durasi:String)
 class MainActivity : ComponentActivity(){
 override fun onCreate(b:Bundle?){
 super.onCreate(b)
@@ -34,6 +35,12 @@ val prefs=ctx.getSharedPreferences("PijatIN_Login",0)
 var isLoggedIn by remember{mutableStateOf(prefs.getBoolean("isLoggedIn",false))}
 var savedPhone by remember{mutableStateOf(prefs.getString("phone","")?:"")}
 var savedEmail by remember{mutableStateOf(prefs.getString("email","")?:"")}
+val daftarLayanan = listOf(
+Layanan("💆‍♀️","Pijat Tradisional","Rp 120k","60 menit"),
+Layanan("🦶","Pijat Refleksi","Rp 100k","75 menit"),
+Layanan("🌸","Pijat Aromatherapy Full Body","Rp 135k","60 menit"),
+Layanan("💆‍♂️","Pijat Tradisional + Kerokan","Rp 135k","75 menit")
+)
 if(isLoggedIn){
 LazyColumn(Modifier.fillMaxSize().background(Color.White).padding(16.dp)){
 item{
@@ -49,19 +56,41 @@ Text("Kamu sudah login otomatis setelah daftar!", fontSize=11.sp, color=Color(0x
 }
 }
 Spacer(Modifier.height(20.dp))
-Text("💆 Layanan PijatIN", fontWeight=FontWeight.Bold, fontSize=16.sp, color=Green)
+Text("💆 Layanan PijatIN - Update Harga Baru", fontWeight=FontWeight.Bold, fontSize=16.sp, color=Green)
 Spacer(Modifier.height(12.dp))
-Button(onClick={Toast.makeText(ctx,"Pijat Tradisional 90 menit Rp 120k",Toast.LENGTH_SHORT).show()}, modifier=Modifier.fillMaxWidth().height(56.dp), shape=RoundedCornerShape(12.dp), colors=ButtonDefaults.buttonColors(Color.White)){Row(Modifier.fillMaxWidth(), horizontalArrangement=Arrangement.SpaceBetween){Text("💆‍♀️ Pijat Tradisional", color=Color.Black, fontWeight=FontWeight.Bold); Text("Rp 120k", color=Orange, fontWeight=FontWeight.Bold)}}
-Spacer(Modifier.height(10.dp))
-Button(onClick={Toast.makeText(ctx,"Pijat Refleksi 60 menit Rp 100k",Toast.LENGTH_SHORT).show()}, modifier=Modifier.fillMaxWidth().height(56.dp), shape=RoundedCornerShape(12.dp), colors=ButtonDefaults.buttonColors(Color.White)){Row(Modifier.fillMaxWidth(), horizontalArrangement=Arrangement.SpaceBetween){Text("🦶 Pijat Refleksi", color=Color.Black, fontWeight=FontWeight.Bold); Text("Rp 100k", color=Orange, fontWeight=FontWeight.Bold)}}
-Spacer(Modifier.height(10.dp))
-Button(onClick={Toast.makeText(ctx,"Aromatherapy 90 menit Rp 150k",Toast.LENGTH_SHORT).show()}, modifier=Modifier.fillMaxWidth().height(56.dp), shape=RoundedCornerShape(12.dp), colors=ButtonDefaults.buttonColors(Color.White)){Row(Modifier.fillMaxWidth(), horizontalArrangement=Arrangement.SpaceBetween){Text("🌸 Aromatherapy", color=Color.Black, fontWeight=FontWeight.Bold); Text("Rp 150k", color=Orange, fontWeight=FontWeight.Bold)}}
-Spacer(Modifier.height(20.dp))
-Button(onClick={Toast.makeText(ctx,"Mencari terapis terdekat...",Toast.LENGTH_SHORT).show()}, modifier=Modifier.fillMaxWidth().height(56.dp), colors=ButtonDefaults.buttonColors(Orange), shape=RoundedCornerShape(14.dp)){Text("🔍 PESAN PIJAT SEKARANG", color=Color.White, fontWeight=FontWeight.Bold)}
-Spacer(Modifier.height(20.dp))
-Button(onClick={prefs.edit().putBoolean("isLoggedIn",false).apply(); isLoggedIn=false; Toast.makeText(ctx,"Logout",Toast.LENGTH_SHORT).show()}, modifier=Modifier.fillMaxWidth().height(50.dp), colors=ButtonDefaults.buttonColors(Color.Red), shape=RoundedCornerShape(12.dp)){Text("LOGOUT", color=Color.White, fontWeight=FontWeight.Bold)}
-Spacer(Modifier.height(20.dp))
-Text("✅ AUTO LOGIN BERHASIL - Dari daftar langsung ke Home!", fontSize=10.sp, color=Color(0xFF4CAF50), fontWeight=FontWeight.Bold)
+}
+items(daftarLayanan.size){ i ->
+val lay = daftarLayanan[i]
+Card(Modifier.fillMaxWidth().padding(bottom=10.dp).background(Color.White), shape=RoundedCornerShape(14.dp), colors=CardDefaults.cardColors(Color.White), elevation=CardDefaults.cardElevation(2.dp)){
+Row(Modifier.fillMaxWidth().padding(14.dp), horizontalArrangement=Arrangement.SpaceBetween){
+Column(Modifier.weight(1f)){
+Row{
+Text(lay.emoji, fontSize=16.sp)
+Spacer(Modifier.width(8.dp))
+Text(lay.nama, fontWeight=FontWeight.Bold, fontSize=14.sp, color=Color.Black)
+}
+Spacer(Modifier.height(4.dp))
+Text("⏱️ "+lay.durasi, fontSize=11.sp, color=Color.Gray)
+}
+Column(horizontalAlignment=Alignment.End){
+Text(lay.harga, color=Orange, fontWeight=FontWeight.Bold, fontSize=16.sp)
+Text("/"+lay.durasi, fontSize=10.sp, color=Color.Gray)
+}
+}
+}
+}
+item{
+Spacer(Modifier.height(12.dp))
+Button(onClick={
+val pesan = "Halo PijatIN, mau pesan:\n- Tradisional 120k/60m\n- Refleksi 100k/75m\n- Aromatherapy Full Body 135k/60m\n- Tradisional+Kerokan 135k/75m\nNo: $savedPhone"
+Toast.makeText(ctx,pesan,Toast.LENGTH_LONG).show()
+}, modifier=Modifier.fillMaxWidth().height(56.dp), colors=ButtonDefaults.buttonColors(Orange), shape=RoundedCornerShape(14.dp)){
+Text("🔍 PESAN PIJAT SEKARANG", color=Color.White, fontWeight=FontWeight.Bold, fontSize=14.sp)
+}
+Spacer(Modifier.height(12.dp))
+Button(onClick={prefs.edit().putBoolean("isLoggedIn",false).apply(); isLoggedIn=false}, modifier=Modifier.fillMaxWidth().height(50.dp), colors=ButtonDefaults.buttonColors(Color.Red), shape=RoundedCornerShape(12.dp)){Text("LOGOUT", color=Color.White, fontWeight=FontWeight.Bold)}
+Spacer(Modifier.height(16.dp))
+Text("✅ V135 - Harga Update: Tradisional 120k/60m, Refleksi 100k/75m, Aromatherapy Full Body 135k/60m, Tradisional+Kerokan 135k/75m", fontSize=9.sp, color=Color(0xFF4CAF50), fontWeight=FontWeight.Bold)
 }
 }
 }else{
@@ -86,8 +115,8 @@ Text(if(isFormValid)"DAFTAR SEKARANG ✅"else"ISI DATA DULU", color=Color.White,
 }){ padding ->
 LazyColumn(Modifier.fillMaxSize().background(Color(0xFFF5F5F5)).padding(padding).padding(16.dp).imePadding()){
 item{
-Text("Daftar #134 FIX HIJAU", fontWeight=FontWeight.Bold, fontSize=22.sp, color=Green)
-Text("TOMBOL BISA KLIK + AUTO LOGIN HOME + HOME LENGKAP", fontSize=9.sp, color=Orange, fontWeight=FontWeight.Bold)
+Text("Daftar #135 Harga Baru", fontWeight=FontWeight.Bold, fontSize=22.sp, color=Green)
+Text("TRADISIONAL 120k/60m REFLEKSI 100k/75m AROMA FULL BODY 135k/60m +KEROKAN 135k/75m", fontSize=8.sp, color=Orange, fontWeight=FontWeight.Bold)
 Spacer(Modifier.height(24.dp))
 OutlinedTextField(value=hp, onValueChange={hp=it}, label={Text("No Telepon *")}, modifier=Modifier.fillMaxWidth(), shape=RoundedCornerShape(12.dp), keyboardOptions=KeyboardOptions(keyboardType=KeyboardType.Phone, imeAction=ImeAction.Next), keyboardActions=KeyboardActions(onNext={focusManager.moveFocus(FocusDirection.Down)}), singleLine=true)
 Spacer(Modifier.height(12.dp))
