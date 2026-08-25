@@ -25,7 +25,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 val Green = Color(0xFF2D4A3E)
 val Orange = Color(0xFFFF7A00)
-data class Layanan(val emoji:String, val nama:String, val harga:String, val durasi:String)
 class MainActivity : ComponentActivity(){
 override fun onCreate(b:Bundle?){
 super.onCreate(b)
@@ -35,12 +34,6 @@ val prefs=ctx.getSharedPreferences("PijatIN_Login",0)
 var isLoggedIn by remember{mutableStateOf(prefs.getBoolean("isLoggedIn",false))}
 var savedPhone by remember{mutableStateOf(prefs.getString("phone","")?:"")}
 var savedEmail by remember{mutableStateOf(prefs.getString("email","")?:"")}
-val daftarLayanan = listOf(
-Layanan("💆‍♀️","Pijat Tradisional","Rp 120k","60 menit"),
-Layanan("🦶","Pijat Refleksi","Rp 100k","75 menit"),
-Layanan("🌸","Pijat Aromatherapy Full Body","Rp 135k","60 menit"),
-Layanan("💆‍♂️","Pijat Tradisional + Kerokan","Rp 135k","75 menit")
-)
 if(isLoggedIn){
 LazyColumn(Modifier.fillMaxSize().background(Color.White).padding(16.dp)){
 item{
@@ -56,10 +49,109 @@ Text("Kamu sudah login otomatis setelah daftar!", fontSize=11.sp, color=Color(0x
 }
 }
 Spacer(Modifier.height(20.dp))
-Text("💆 Layanan PijatIN - Update Harga Baru", fontWeight=FontWeight.Bold, fontSize=16.sp, color=Green)
+Text("💆 Layanan PijatIN - Harga Baru", fontWeight=FontWeight.Bold, fontSize=16.sp, color=Green)
 Spacer(Modifier.height(12.dp))
+// 1. Pijat Tradisional 120k/60 menit
+Box(Modifier.fillMaxWidth().background(Color.White, RoundedCornerShape(12.dp)).padding(14.dp)){
+Row(Modifier.fillMaxWidth(), horizontalArrangement=Arrangement.SpaceBetween){
+Column{
+Text("💆‍♀️ Pijat Tradisional", fontWeight=FontWeight.Bold, fontSize=14.sp)
+Text("⏱️ 60 menit", fontSize=11.sp, color=Color.Gray)
 }
-items(daftarLayanan.size){ i ->
-val lay = daftarLayanan[i]
-Card(Modifier.fillMaxWidth().padding(bottom=10.dp).background(Color.White), shape=RoundedCornerShape(14.dp), colors=CardDefaults.cardColors(Color.White), elevation=CardDefaults.cardElevation(2.dp)){
-Row(Modifier.fillMaxWidth().padding(14.dp), horizontalArrangement=Arrangement.SpaceBetween){
+Column(horizontalAlignment=Alignment.End){
+Text("Rp 120k", color=Orange, fontWeight=FontWeight.Bold, fontSize=16.sp)
+Text("/60 menit", fontSize=10.sp, color=Color.Gray)
+}
+}
+}
+Spacer(Modifier.height(10.dp))
+// 2. Pijat Refleksi 100k/75 menit
+Box(Modifier.fillMaxWidth().background(Color.White, RoundedCornerShape(12.dp)).padding(14.dp)){
+Row(Modifier.fillMaxWidth(), horizontalArrangement=Arrangement.SpaceBetween){
+Column{
+Text("🦶 Pijat Refleksi", fontWeight=FontWeight.Bold, fontSize=14.sp)
+Text("⏱️ 75 menit", fontSize=11.sp, color=Color.Gray)
+}
+Column(horizontalAlignment=Alignment.End){
+Text("Rp 100k", color=Orange, fontWeight=FontWeight.Bold, fontSize=16.sp)
+Text("/75 menit", fontSize=10.sp, color=Color.Gray)
+}
+}
+}
+Spacer(Modifier.height(10.dp))
+// 3. Pijat Aromatherapy Full Body 135k/60 menit
+Box(Modifier.fillMaxWidth().background(Color.White, RoundedCornerShape(12.dp)).padding(14.dp)){
+Row(Modifier.fillMaxWidth(), horizontalArrangement=Arrangement.SpaceBetween){
+Column{
+Text("🌸 Aromatherapy Full Body", fontWeight=FontWeight.Bold, fontSize=14.sp)
+Text("⏱️ 60 menit", fontSize=11.sp, color=Color.Gray)
+}
+Column(horizontalAlignment=Alignment.End){
+Text("Rp 135k", color=Orange, fontWeight=FontWeight.Bold, fontSize=16.sp)
+Text("/60 menit", fontSize=10.sp, color=Color.Gray)
+}
+}
+}
+Spacer(Modifier.height(10.dp))
+// 4. Pijat Tradisional+Kerokan 135k/75 menit
+Box(Modifier.fillMaxWidth().background(Color.White, RoundedCornerShape(12.dp)).padding(14.dp)){
+Row(Modifier.fillMaxWidth(), horizontalArrangement=Arrangement.SpaceBetween){
+Column{
+Text("💆‍♂️ Tradisional + Kerokan", fontWeight=FontWeight.Bold, fontSize=14.sp)
+Text("⏱️ 75 menit", fontSize=11.sp, color=Color.Gray)
+}
+Column(horizontalAlignment=Alignment.End){
+Text("Rp 135k", color=Orange, fontWeight=FontWeight.Bold, fontSize=16.sp)
+Text("/75 menit", fontSize=10.sp, color=Color.Gray)
+}
+}
+}
+Spacer(Modifier.height(20.dp))
+Button(onClick={Toast.makeText(ctx,"Pesan: Tradisional 120k/60m, Refleksi 100k/75m, Aroma Full Body 135k/60m, Tradisional+Kerokan 135k/75m",Toast.LENGTH_LONG).show()}, modifier=Modifier.fillMaxWidth().height(56.dp), colors=ButtonDefaults.buttonColors(Orange), shape=RoundedCornerShape(14.dp)){Text("🔍 PESAN PIJAT SEKARANG", color=Color.White, fontWeight=FontWeight.Bold)}
+Spacer(Modifier.height(12.dp))
+Button(onClick={prefs.edit().putBoolean("isLoggedIn",false).apply(); isLoggedIn=false}, modifier=Modifier.fillMaxWidth().height(50.dp), colors=ButtonDefaults.buttonColors(Color.Red), shape=RoundedCornerShape(12.dp)){Text("LOGOUT", color=Color.White, fontWeight=FontWeight.Bold)}
+Spacer(Modifier.height(16.dp))
+Text("✅ V136 HIJAU - Harga: Tradisional 120k/60m, Refleksi 100k/75m, Aroma Full Body 135k/60m, Tradisional+Kerokan 135k/75m", fontSize=9.sp, color=Color(0xFF4CAF50), fontWeight=FontWeight.Bold)
+}
+}
+}else{
+var hp by remember{mutableStateOf("083893330346")}
+var email by remember{mutableStateOf("malikysyachmal2018@gmail.com")}
+var p1 by remember{mutableStateOf("")}
+var p2 by remember{mutableStateOf("")}
+val focusManager=LocalFocusManager.current
+val keyboardController=LocalSoftwareKeyboardController.current
+val isFormValid = hp.length>=10 && email.contains("@") && p1.length>=6 && p1==p2
+Scaffold(bottomBar={
+Column(Modifier.fillMaxWidth().background(Color.White).padding(16.dp).imePadding()){
+Button(onClick={
+if(!isFormValid){Toast.makeText(ctx,"Lengkapi data!",Toast.LENGTH_SHORT).show();return@Button}
+prefs.edit().apply{putBoolean("isLoggedIn",true); putString("phone",hp); putString("email",email); putString("password",p1); apply()}
+Toast.makeText(ctx,"✅ DAFTAR BERHASIL! Masuk Home...",Toast.LENGTH_LONG).show()
+savedPhone=hp; savedEmail=email; isLoggedIn=true; keyboardController?.hide()
+}, modifier=Modifier.fillMaxWidth().height(56.dp), enabled=isFormValid, colors=ButtonDefaults.buttonColors(containerColor=Green, disabledContainerColor=Color.Gray), shape=RoundedCornerShape(14.dp)){
+Text(if(isFormValid)"DAFTAR SEKARANG ✅"else"ISI DATA DULU", color=Color.White, fontWeight=FontWeight.Bold, fontSize=16.sp)
+}
+}
+}){ padding ->
+LazyColumn(Modifier.fillMaxSize().background(Color(0xFFF5F5F5)).padding(padding).padding(16.dp).imePadding()){
+item{
+Text("Daftar #136 Harga Baru", fontWeight=FontWeight.Bold, fontSize=22.sp, color=Green)
+Text("FIX HIJAU + TRADISIONAL 120k/60m REFLEKSI 100k/75m AROMA FULL BODY 135k/60m TRAD+KEROKAN 135k/75m", fontSize=8.sp, color=Orange, fontWeight=FontWeight.Bold)
+Spacer(Modifier.height(24.dp))
+OutlinedTextField(value=hp, onValueChange={hp=it}, label={Text("No Telepon *")}, modifier=Modifier.fillMaxWidth(), shape=RoundedCornerShape(12.dp), keyboardOptions=KeyboardOptions(keyboardType=KeyboardType.Phone, imeAction=ImeAction.Next), keyboardActions=KeyboardActions(onNext={focusManager.moveFocus(FocusDirection.Down)}), singleLine=true)
+Spacer(Modifier.height(12.dp))
+OutlinedTextField(value=email, onValueChange={email=it}, label={Text("Email *")}, modifier=Modifier.fillMaxWidth(), shape=RoundedCornerShape(12.dp), keyboardOptions=KeyboardOptions(keyboardType=KeyboardType.Email, imeAction=ImeAction.Next), keyboardActions=KeyboardActions(onNext={focusManager.moveFocus(FocusDirection.Down)}), singleLine=true)
+Spacer(Modifier.height(12.dp))
+OutlinedTextField(value=p1, onValueChange={p1=it}, label={Text("Password *")}, visualTransformation=PasswordVisualTransformation(), modifier=Modifier.fillMaxWidth(), shape=RoundedCornerShape(12.dp), keyboardOptions=KeyboardOptions(keyboardType=KeyboardType.Password, imeAction=ImeAction.Next), keyboardActions=KeyboardActions(onNext={focusManager.moveFocus(FocusDirection.Down)}), singleLine=true)
+Spacer(Modifier.height(12.dp))
+OutlinedTextField(value=p2, onValueChange={p2=it}, label={Text("Konfirmasi Password *")}, visualTransformation=PasswordVisualTransformation(), modifier=Modifier.fillMaxWidth(), shape=RoundedCornerShape(12.dp), keyboardOptions=KeyboardOptions(keyboardType=KeyboardType.Password, imeAction=ImeAction.Done), keyboardActions=KeyboardActions(onDone={focusManager.clearFocus(); keyboardController?.hide()}), singleLine=true)
+if(p2.isNotEmpty()){Spacer(Modifier.height(8.dp)); Text(if(p1==p2)"✅ Password cocok"else"❌ Tidak sama", color=if(p1==p2)Color(0xFF4CAF50)else Color.Red, fontSize=12.sp, fontWeight=FontWeight.Bold)}
+Spacer(Modifier.height(100.dp))
+}
+}
+}
+}
+}
+}
+}
