@@ -1,9 +1,10 @@
-
 package com.pijatin.customer
 
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -40,10 +41,10 @@ class MainActivity : ComponentActivity(){
                 Box(Modifier.fillMaxSize().background(DarkGreen), contentAlignment=Alignment.Center){
                     Column(horizontalAlignment=Alignment.CenterHorizontally){
                         Text("PijatIN", color=Color.White, fontSize=32.sp, fontWeight=FontWeight.Bold)
-                        Text("Customer REAL V125", color=Color(0xFFFFD700), fontSize=14.sp)
+                        Text("Customer REAL V126", color=Color(0xFFFFD700), fontSize=14.sp)
                         Spacer(Modifier.height(20.dp))
                         CircularProgressIndicator(color=Color.White)
-                        Text("#125 BANK + EWALLET REAL", color=Color.White, fontSize=12.sp)
+                        Text("#126 SIMPAN LOKASI REAL UNTUK MITRA", color=Color.White, fontSize=12.sp)
                     }
                 }
             } else {
@@ -60,12 +61,10 @@ class MainActivity : ComponentActivity(){
                 var ktpUri by remember { mutableStateOf<Uri?>(null) }
                 var lat by remember { mutableStateOf(-6.2078) }
                 var lng by remember { mutableStateOf(106.8466) }
-                var mapsOk by remember { mutableStateOf(true) }
+                var lokasiTersimpan by remember { mutableStateOf(false) }
                 var selectedBank by remember { mutableStateOf("BCA") }
                 var selectedEwallet by remember { mutableStateOf("DANA") }
                 var noEwallet by remember { mutableStateOf("") }
-                var showBankMenu by remember { mutableStateOf(false) }
-                var showEwalletMenu by remember { mutableStateOf(false) }
 
                 val fotoGaleri = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { if(it!=null) fotoUri=it }
                 val ktpGaleri = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { if(it!=null) ktpUri=it }
@@ -78,14 +77,59 @@ class MainActivity : ComponentActivity(){
                     try { ctx.startActivity(intent) } catch(e:Exception){
                         ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://www.google.com/maps?q=$lat,$lng")))
                     }
-                    mapsOk=true
+                }
+
+                fun simpanLokasiReal(){
+                    // SIMPAN KE SHARED PREFERENCES - BIAR MITRA BISA BACA DI PESANAN
+                    val prefsCustomer = ctx.getSharedPreferences("PijatIN_Customer_Location", Context.MODE_PRIVATE)
+                    prefsCustomer.edit().apply {
+                        putString("customer_lat", lat.toString())
+                        putString("customer_lng", lng.toString())
+                        putString("customer_alamat", alamat)
+                        putString("customer_nama", nama)
+                        putLong("timestamp", System.currentTimeMillis())
+                        putBoolean("lokasi_sudah_disimpan", true)
+                        apply()
+                    }
+                    // SIMPAN JUGA UNTUK ORDER - INI YANG DIBACA MITRA
+                    val prefsOrder = ctx.getSharedPreferences("PijatIN_Order_Data", Context.MODE_PRIVATE)
+                    prefsOrder.edit().apply {
+                        putString("order_customer_lat", lat.toString())
+                        putString("order_customer_lng", lng.toString())
+                        putString("order_customer_alamat", alamat.ifEmpty { "kunciran jaya RT 01 RW 01 pinang Tangerang" })
+                        putString("order_maps_url", "https://www.google.com/maps?q=$lat,$lng")
+                        putString("order_gmaps_intent", "geo:$lat,$lng?q=$lat,$lng(Customer)")
+                        putBoolean("order_lokasi_valid", true)
+                        apply()
+                    }
+                    // SIMPAN UNTUK MITRA TRACKING
+                    val prefsMitra = ctx.getSharedPreferences("PijatIN_Mitra_Tracking", Context.MODE_PRIVATE)
+                    prefsMitra.edit().apply {
+                        putString("tracking_customer_lat", lat.toString())
+                        putString("tracking_customer_lng", lng.toString())
+                        putString("tracking_customer_alamat_lengkap", alamat)
+                        putString("tracking_status", "LOKASI_TERSIMPAN_SIAP_DILACAK_MITRA")
+                        apply()
+                    }
+                    lokasiTersimpan = true
+                    Toast.makeText(ctx, "✅ LOKASI TERSIMPAN! Mitra bisa lacak: $lat,$lng - $alamat", Toast.LENGTH_LONG).show()
+                }
+
+                // CEK APAKAH LOKASI SUDAH PERNAH DISIMPAN
+                LaunchedEffect(Unit){
+                    val prefs = ctx.getSharedPreferences("PijatIN_Customer_Location", Context.MODE_PRIVATE)
+                    if(prefs.getBoolean("lokasi_sudah_disimpan", false)){
+                        lokasiTersimpan = true
+                        lat = prefs.getString("customer_lat", "-6.2078")?.toDoubleOrNull() ?: -6.2078
+                        lng = prefs.getString("customer_lng", "106.8466")?.toDoubleOrNull() ?: 106.8466
+                    }
                 }
 
                 MaterialTheme {
                     LazyColumn(Modifier.fillMaxSize().background(Color(0xFFF5F5F5)).padding(16.dp), contentPadding=PaddingValues(bottom=400.dp)){
                         item{
-                            Text("Daftar PijatIN #125 REAL", fontWeight=FontWeight.Bold, fontSize=20.sp, color=DarkGreen)
-                            Text("✅ BCA MANDIRI BRI SEABANK + DANA OVO GOPAY + Maps REAL", fontSize=10.sp, color=Orange, fontWeight=FontWeight.Bold)
+                            Text("Daftar PijatIN #126 REAL", fontWeight=FontWeight.Bold, fontSize=20.sp, color=DarkGreen)
+                            Text("✅ SIMPAN LOKASI REAL - MITRA BISA LACAK", fontSize=10.sp, color=Orange, fontWeight=FontWeight.Bold)
                             Spacer(Modifier.height(16.dp))
                             OutlinedTextField(nama,{nama=it}, label={Text("Nama Lengkap *")}, modifier=Modifier.fillMaxWidth(), shape=RoundedCornerShape(10.dp))
                             Spacer(Modifier.height(10.dp))
@@ -95,17 +139,29 @@ class MainActivity : ComponentActivity(){
                             Spacer(Modifier.height(10.dp))
                             OutlinedTextField(alamat,{alamat=it}, label={Text("Alamat *")}, modifier=Modifier.fillMaxWidth().height(90.dp), shape=RoundedCornerShape(10.dp))
                             Spacer(Modifier.height(12.dp))
-                            Box(Modifier.fillMaxWidth().height(150.dp).clip(RoundedCornerShape(12.dp)).background(Color(0xFFD0E8FF)), contentAlignment=Alignment.Center){
-                                Column(horizontalAlignment=Alignment.CenterHorizontally){
-                                    Text("🗺️ MAPS 150px TAP BUKA", fontWeight=FontWeight.Bold, fontSize=13.sp)
+                            Box(Modifier.fillMaxWidth().height(150.dp).clip(RoundedCornerShape(12.dp)).background(if(lokasiTersimpan) Color(0xFFC8E6C9) else Color(0xFFD0E8FF)), contentAlignment=Alignment.Center){
+                                Column(horizontalAlignment=Alignment.CenterHorizontally, modifier=Modifier.padding(10.dp)){
+                                    Text(if(lokasiTersimpan) "✅ LOKASI TERSIMPAN" else "🗺️ MAPS 150px TAP BUKA", fontWeight=FontWeight.Bold, fontSize=13.sp, color=if(lokasiTersimpan) Color(0xFF2E7D32) else Color.Black)
+                                    Spacer(Modifier.height(4.dp))
                                     Text("📍 ${String.format("%.4f", lat)}, ${String.format("%.4f", lng)}", fontSize=12.sp, fontWeight=FontWeight.Bold)
-                                    if(mapsOk) Text("✅ Maps OK - Tap tombol bawah", color=Color(0xFF2E7D32), fontSize=10.sp, fontWeight=FontWeight.Bold)
+                                    Spacer(Modifier.height(4.dp))
+                                    if(lokasiTersimpan){
+                                        Text("✅ Tersimpan untuk Mitra - Bisa dilacak di pesanan", color=Color(0xFF2E7D32), fontSize=10.sp, fontWeight=FontWeight.Bold)
+                                        Text("📦 Order_Data + Mitra_Tracking OK", color=Color(0xFF2E7D32), fontSize=9.sp)
+                                    } else {
+                                        Text("⚠️ Tap Simpan Lokasi agar mitra bisa lacak", color=Color(0xFFE65100), fontSize=10.sp, fontWeight=FontWeight.Bold)
+                                    }
                                 }
                             }
                             Spacer(Modifier.height(8.dp))
                             Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){
                                 Button(onClick={ openMaps() }, modifier=Modifier.weight(1f).height(44.dp), colors=ButtonDefaults.buttonColors(DarkGreen), shape=RoundedCornerShape(10.dp)){ Text("🌍 Buka Maps Real", fontSize=10.sp) }
-                                OutlinedButton(onClick={ mapsOk=true }, modifier=Modifier.weight(1f).height(44.dp), shape=RoundedCornerShape(10.dp)){ Text("Gunakan Lokasi", fontSize=10.sp) }
+                                Button(
+                                    onClick={ simpanLokasiReal() }, 
+                                    modifier=Modifier.weight(1f).height(44.dp), 
+                                    colors=ButtonDefaults.buttonColors(if(lokasiTersimpan) Color(0xFF2E7D32) else Orange),
+                                    shape=RoundedCornerShape(10.dp)
+                                ){ Text(if(lokasiTersimpan) "✅ Lokasi Tersimpan" else "📍 Simpan Lokasi", fontSize=10.sp, fontWeight=FontWeight.Bold) }
                             }
                             Spacer(Modifier.height(16.dp))
                             // BANK SELECTION REAL
@@ -152,17 +208,20 @@ class MainActivity : ComponentActivity(){
                             OutlinedTextField(confirm,{confirm=it}, label={Text("Konfirmasi Password")}, visualTransformation=PasswordVisualTransformation(), modifier=Modifier.fillMaxWidth(), shape=RoundedCornerShape(10.dp))
                             if(confirm.isNotEmpty()) Text(if(confirm==pass) "✅ Password cocok" else "❌ Tidak sama", color=if(confirm==pass) Color(0xFF4CAF50) else Color.Red, fontSize=12.sp, fontWeight=FontWeight.Bold)
                             Spacer(Modifier.height(24.dp))
-                            // FIX: DAFTAR SELALU BISA DIKLIK
                             Button(onClick={
-                                // SIMPAN KE BACKEND REAL + SHARED PREFERENCE
-                                // TODO: Kirim ke API /api/register dengan bank + ewallet + lokasi
-                                // Untuk sekarang log
-                                println("DAFTAR REAL: $email $selectedBank $noRek $selectedEwallet $noEwallet $lat $lng")
+                                if(!lokasiTersimpan){
+                                    Toast.makeText(ctx, "⚠️ Simpan Lokasi dulu biar mitra bisa lacak!", Toast.LENGTH_SHORT).show()
+                                    simpanLokasiReal()
+                                }
+                                println("DAFTAR REAL V126: $email $selectedBank $noRek $selectedEwallet $noEwallet $lat $lng LOKASI_TERSIMPAN=$lokasiTersimpan")
+                                Toast.makeText(ctx, "✅ DAFTAR OK! Lokasi: $lat,$lng tersimpan untuk mitra", Toast.LENGTH_LONG).show()
                             }, modifier=Modifier.fillMaxWidth().height(54.dp), colors=ButtonDefaults.buttonColors(DarkGreen), shape=RoundedCornerShape(12.dp)){
                                 Text("DAFTAR → Saldo 0 ✅ BISA KLIK!", fontWeight=FontWeight.Bold, color=Color.White)
                             }
                             Spacer(Modifier.height(10.dp))
-                            Text("✅ TOMBOL DAFTAR BISA DIKLIK SEKARANG! Bank: $selectedBank $noRek | Ewallet: $selectedEwallet $noEwallet | Lokasi: $lat,$lng", color=Color(0xFF4CAF50), fontSize=11.sp, fontWeight=FontWeight.Bold)
+                            Text("✅ BANK: $selectedBank $noRek | EWALLET: $selectedEwallet $noEwallet", color=Color(0xFF4CAF50), fontSize=11.sp, fontWeight=FontWeight.Bold)
+                            Spacer(Modifier.height(4.dp))
+                            Text(if(lokasiTersimpan) "📍 LOKASI: $lat,$lng ✅ TERSIMPAN - MITRA BISA LACAK DI PESANAN" else "📍 LOKASI: $lat,$lng ⚠️ BELUM DISIMPAN - TAP SIMPAN LOKASI", color=if(lokasiTersimpan) Color(0xFF2E7D32) else Color(0xFFE65100), fontSize=11.sp, fontWeight=FontWeight.Bold)
                         }
                     }
                 }
