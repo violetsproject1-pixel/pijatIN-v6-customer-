@@ -4,6 +4,7 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -35,25 +36,35 @@ val prefs=ctx.getSharedPreferences("PijatIN_Login",0)
 var showSplash by remember{mutableStateOf(true)}
 var isLoggedIn by remember{mutableStateOf(prefs.getBoolean("isLoggedIn",false))}
 var savedPhone by remember{mutableStateOf(prefs.getString("phone","")?:"")}
+var showDrawer by remember{mutableStateOf(false)}
 if(showSplash){
-LaunchedEffect(Unit){ kotlinx.coroutines.delay(1800); showSplash=false }
+LaunchedEffect(Unit){ kotlinx.coroutines.delay(1500); showSplash=false }
 Box(Modifier.fillMaxSize().background(Orange), contentAlignment=Alignment.Center){
 Column(horizontalAlignment=Alignment.CenterHorizontally){
 Text("PijatIN", fontWeight=FontWeight.Bold, fontSize=32.sp, color=Color.White)
-Spacer(Modifier.height(8.dp))
 Text("Pijat Profesional ke Rumah", fontSize=12.sp, color=Color.White)
 Spacer(Modifier.height(20.dp))
 Text("Loading...", fontSize=14.sp, color=Color.White)
 }
 }
 }else if(isLoggedIn){
+Box(Modifier.fillMaxSize()){
 LazyColumn(Modifier.fillMaxSize().background(Color(0xFFF6F3EE)).padding(16.dp)){
 item{
-// HAPUS HEADER MALIKI & DATA TERSIMPAN - SESUAI GARIS MERAH
+Row(Modifier.fillMaxWidth(), horizontalArrangement=Arrangement.SpaceBetween, verticalAlignment=Alignment.CenterVertically){
+Button(onClick={showDrawer=true}, colors=ButtonDefaults.buttonColors(Color.White), shape=RoundedCornerShape(10.dp), contentPadding=PaddingValues(8.dp)){Text("☰", fontSize=20.sp, color=Color.Black)}
+Text("PijatIN", fontWeight=FontWeight.Bold, fontSize=18.sp, color=Green)
+Button(onClick={Toast.makeText(ctx,"Notifikasi: 3 promo baru!",Toast.LENGTH_SHORT).show()}, colors=ButtonDefaults.buttonColors(Color.White), shape=RoundedCornerShape(10.dp), contentPadding=PaddingValues(8.dp)){Text("🔔", fontSize=20.sp)}
+}
+Spacer(Modifier.height(12.dp))
+// HEADER THERAPIST + LONCENG POJOK KANAN SESUAI GARIS HITAM
 Box(Modifier.fillMaxWidth().background(Color(0xFFFFF3E0), RoundedCornerShape(12.dp)).padding(12.dp)){
+Row(Modifier.fillMaxWidth(), horizontalArrangement=Arrangement.SpaceBetween, verticalAlignment=Alignment.CenterVertically){
 Column{
 Text("Therapist Terdekat", fontWeight=FontWeight.Bold, color=Orange, fontSize=14.sp)
 Text("Online & siap ke lokasi kamu", fontSize=11.sp, color=Color(0xFF2E7D32))
+}
+Box(Modifier.background(Color.White, RoundedCornerShape(20.dp)).clickable{Toast.makeText(ctx,"Notifikasi: 2 therapist baru di dekatmu!",Toast.LENGTH_SHORT).show()}.padding(horizontal=12.dp, vertical=6.dp)){Text("🔔", fontSize=16.sp)}
 }
 }
 Spacer(Modifier.height(10.dp))
@@ -139,6 +150,69 @@ Button(onClick={prefs.edit().putBoolean("isLoggedIn",false).apply(); isLoggedIn=
 Spacer(Modifier.height(16.dp))
 }
 }
+if(showDrawer){
+Box(Modifier.fillMaxSize().background(Color(0x80000000)).clickable{showDrawer=false}){
+LazyColumn(Modifier.fillMaxHeight().width(280.dp).background(Color.White).padding(16.dp)){
+item{
+Row(Modifier.fillMaxWidth().padding(bottom=16.dp), verticalAlignment=Alignment.CenterVertically){
+Box(Modifier.size(48.dp).background(Color.LightGray, RoundedCornerShape(24.dp)), contentAlignment=Alignment.Center){Text("👤", fontSize=24.sp)}
+Spacer(Modifier.width(12.dp))
+Column{
+Text("Pelanggan PijatIN", fontWeight=FontWeight.Bold, fontSize=14.sp)
+Text(savedPhone.ifEmpty{"083893330346"}, fontSize=11.sp, color=Color.Gray)
+}
+}
+Divider()
+Spacer(Modifier.height(16.dp))
+}
+// MENU SIDEBAR SESUAI REQUEST
+item{
+Column(Modifier.fillMaxWidth(), verticalArrangement=Arrangement.spacedBy(4.dp)){
+Row(Modifier.fillMaxWidth().clickable{Toast.makeText(ctx,"Order Saya",Toast.LENGTH_SHORT).show(); showDrawer=false}.padding(12.dp), verticalAlignment=Alignment.CenterVertically){
+Text("📦", fontSize=20.sp)
+Spacer(Modifier.width(16.dp))
+Text("Order", fontSize=14.sp, fontWeight=FontWeight.Bold)
+}
+Row(Modifier.fillMaxWidth().clickable{Toast.makeText(ctx,"Dompet: Rp50.000",Toast.LENGTH_SHORT).show(); showDrawer=false}.padding(12.dp), verticalAlignment=Alignment.CenterVertically){
+Text("👛", fontSize=20.sp)
+Spacer(Modifier.width(16.dp))
+Text("Dompet", fontSize=14.sp, fontWeight=FontWeight.Bold)
+}
+Row(Modifier.fillMaxWidth().clickable{Toast.makeText(ctx,"Therapist Saya",Toast.LENGTH_SHORT).show(); showDrawer=false}.padding(12.dp), verticalAlignment=Alignment.CenterVertically){
+Text("🧑‍⚕️", fontSize=20.sp)
+Spacer(Modifier.width(16.dp))
+Text("Therapist Saya", fontSize=14.sp, fontWeight=FontWeight.Bold)
+}
+Row(Modifier.fillMaxWidth().clickable{Toast.makeText(ctx,"Kupon: 3 tersedia",Toast.LENGTH_SHORT).show(); showDrawer=false}.padding(12.dp), verticalAlignment=Alignment.CenterVertically){
+Text("🎟️", fontSize=20.sp)
+Spacer(Modifier.width(16.dp))
+Text("Kupon", fontSize=14.sp, fontWeight=FontWeight.Bold)
+}
+Row(Modifier.fillMaxWidth().clickable{Toast.makeText(ctx,"Pusat Bantuan",Toast.LENGTH_SHORT).show(); showDrawer=false}.padding(12.dp), verticalAlignment=Alignment.CenterVertically){
+Text("🆘", fontSize=20.sp)
+Spacer(Modifier.width(16.dp))
+Text("Pusat Bantuan", fontSize=14.sp, fontWeight=FontWeight.Bold)
+}
+Row(Modifier.fillMaxWidth().clickable{Toast.makeText(ctx,"Pengaturan",Toast.LENGTH_SHORT).show(); showDrawer=false}.padding(12.dp), verticalAlignment=Alignment.CenterVertically){
+Text("⚙️", fontSize=20.sp)
+Spacer(Modifier.width(16.dp))
+Text("Pengaturan", fontSize=14.sp, fontWeight=FontWeight.Bold)
+}
+Spacer(Modifier.height(24.dp))
+Divider()
+Spacer(Modifier.height(16.dp))
+Row(Modifier.fillMaxWidth().clickable{showDrawer=false}.padding(12.dp), verticalAlignment=Alignment.CenterVertically){
+Text("📍", fontSize=16.sp)
+Spacer(Modifier.width(12.dp))
+Text("Anda berada di Jakarta", fontSize=12.sp, color=Color.Gray)
+Text(" Jakarta", fontSize=12.sp, color=Orange, fontWeight=FontWeight.Bold)
+}
+}
+}
+}
+}
+}
+}
 }else{
 var hp by remember{mutableStateOf("083893330346")}
 var email by remember{mutableStateOf("malikysyachmal2018@gmail.com")}
@@ -161,7 +235,6 @@ Text(if(isFormValid)"DAFTAR SEKARANG"else"ISI DATA DULU", color=Color.White, fon
 }){ padding ->
 LazyColumn(Modifier.fillMaxSize().background(Color.White).padding(padding).padding(16.dp).imePadding()){
 item{
-// HAPUS "Daftar #141 FIX HIJAU - KONSEP GAMBAR 2 - PASTI HIJAU KAYAK #138"
 Spacer(Modifier.height(20.dp))
 Text("Selamat Datang", fontWeight=FontWeight.Bold, fontSize=22.sp, color=Green)
 Text("PijatIN - Pijat profesional ke rumah", fontSize=12.sp, color=Color.Gray)
@@ -175,6 +248,7 @@ Spacer(Modifier.height(12.dp))
 OutlinedTextField(value=p2, onValueChange={p2=it}, label={Text("Konfirmasi Password *")}, visualTransformation=PasswordVisualTransformation(), modifier=Modifier.fillMaxWidth(), shape=RoundedCornerShape(12.dp), keyboardOptions=KeyboardOptions(keyboardType=KeyboardType.Password, imeAction=ImeAction.Done), keyboardActions=KeyboardActions(onDone={focusManager.clearFocus(); keyboardController?.hide()}), singleLine=true)
 if(p2.isNotEmpty()){Spacer(Modifier.height(8.dp)); Text(if(p1==p2)"Password cocok"else"Tidak sama", color=if(p1==p2)Color(0xFF4CAF50)else Color.Red, fontSize=12.sp, fontWeight=FontWeight.Bold)}
 Spacer(Modifier.height(100.dp))
+}
 }
 }
 }
