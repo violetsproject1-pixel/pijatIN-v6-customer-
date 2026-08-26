@@ -4,7 +4,6 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -25,6 +24,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.delay
 val Green = Color(0xFF2D4A3E)
 val Orange = Color(0xFFFF7A00)
 class MainActivity : ComponentActivity(){
@@ -37,14 +37,14 @@ var showSplash by remember{mutableStateOf(true)}
 var isLoggedIn by remember{mutableStateOf(prefs.getBoolean("isLoggedIn",false))}
 var savedPhone by remember{mutableStateOf(prefs.getString("phone","")?:"")}
 var showDrawer by remember{mutableStateOf(false)}
+LaunchedEffect(Unit){ delay(1500); showSplash=false }
 if(showSplash){
-LaunchedEffect(Unit){ kotlinx.coroutines.delay(1500); showSplash=false }
 Box(Modifier.fillMaxSize().background(Orange), contentAlignment=Alignment.Center){
 Column(horizontalAlignment=Alignment.CenterHorizontally){
-Text("PijatIN", fontWeight=FontWeight.Bold, fontSize=32.sp, color=Color.White)
+Text("PijatIN", fontWeight=FontWeight.Bold, fontSize=30.sp, color=Color.White)
 Text("Pijat Profesional ke Rumah", fontSize=12.sp, color=Color.White)
-Spacer(Modifier.height(20.dp))
-Text("Loading...", fontSize=14.sp, color=Color.White)
+Spacer(Modifier.height(16.dp))
+Text("Loading...", fontSize=13.sp, color=Color.White)
 }
 }
 }else if(isLoggedIn){
@@ -52,19 +52,18 @@ Box(Modifier.fillMaxSize()){
 LazyColumn(Modifier.fillMaxSize().background(Color(0xFFF6F3EE)).padding(16.dp)){
 item{
 Row(Modifier.fillMaxWidth(), horizontalArrangement=Arrangement.SpaceBetween, verticalAlignment=Alignment.CenterVertically){
-Button(onClick={showDrawer=true}, colors=ButtonDefaults.buttonColors(Color.White), shape=RoundedCornerShape(10.dp), contentPadding=PaddingValues(8.dp)){Text("☰", fontSize=20.sp, color=Color.Black)}
-Text("PijatIN", fontWeight=FontWeight.Bold, fontSize=18.sp, color=Green)
-Button(onClick={Toast.makeText(ctx,"Notifikasi: 3 promo baru!",Toast.LENGTH_SHORT).show()}, colors=ButtonDefaults.buttonColors(Color.White), shape=RoundedCornerShape(10.dp), contentPadding=PaddingValues(8.dp)){Text("🔔", fontSize=20.sp)}
+Button(onClick={showDrawer=true}, colors=ButtonDefaults.buttonColors(Color.White), shape=RoundedCornerShape(8.dp)){Text("MENU", fontSize=12.sp, color=Color.Black, fontWeight=FontWeight.Bold)}
+Text("PijatIN", fontWeight=FontWeight.Bold, fontSize=16.sp, color=Green)
+Button(onClick={Toast.makeText(ctx,"Notifikasi: 3 promo baru!",Toast.LENGTH_SHORT).show()}, colors=ButtonDefaults.buttonColors(Color.White), shape=RoundedCornerShape(8.dp)){Text("LONCENG", fontSize=10.sp, color=Color.Black, fontWeight=FontWeight.Bold)}
 }
 Spacer(Modifier.height(12.dp))
-// HEADER THERAPIST + LONCENG POJOK KANAN SESUAI GARIS HITAM
 Box(Modifier.fillMaxWidth().background(Color(0xFFFFF3E0), RoundedCornerShape(12.dp)).padding(12.dp)){
 Row(Modifier.fillMaxWidth(), horizontalArrangement=Arrangement.SpaceBetween, verticalAlignment=Alignment.CenterVertically){
 Column{
 Text("Therapist Terdekat", fontWeight=FontWeight.Bold, color=Orange, fontSize=14.sp)
 Text("Online & siap ke lokasi kamu", fontSize=11.sp, color=Color(0xFF2E7D32))
 }
-Box(Modifier.background(Color.White, RoundedCornerShape(20.dp)).clickable{Toast.makeText(ctx,"Notifikasi: 2 therapist baru di dekatmu!",Toast.LENGTH_SHORT).show()}.padding(horizontal=12.dp, vertical=6.dp)){Text("🔔", fontSize=16.sp)}
+Button(onClick={Toast.makeText(ctx,"Notifikasi: 2 therapist baru!",Toast.LENGTH_SHORT).show()}, colors=ButtonDefaults.buttonColors(Color.White), shape=RoundedCornerShape(20.dp)){Text("BEL", fontSize=10.sp)}
 }
 }
 Spacer(Modifier.height(10.dp))
@@ -78,7 +77,7 @@ Row(Modifier.fillMaxWidth(), horizontalArrangement=Arrangement.spacedBy(10.dp)){
 Box(Modifier.weight(1f).background(Color.White, RoundedCornerShape(14.dp)).padding(10.dp)){
 Column{
 Text("SR Siti Rahayu", fontWeight=FontWeight.Bold, fontSize=12.sp)
-Text("0.3km • 342 job • 4.9", fontSize=9.sp, color=Color.Gray)
+Text("0.3km - 342 job - 4.9", fontSize=9.sp, color=Color.Gray)
 Spacer(Modifier.height(6.dp))
 Button(onClick={Toast.makeText(ctx,"Order Siti - Tradisional 120k/60m",Toast.LENGTH_SHORT).show()}, modifier=Modifier.fillMaxWidth().height(36.dp), colors=ButtonDefaults.buttonColors(Orange), shape=RoundedCornerShape(12.dp)){Text("Order Ini", fontSize=10.sp, color=Color.White, fontWeight=FontWeight.Bold)}
 }
@@ -86,7 +85,7 @@ Button(onClick={Toast.makeText(ctx,"Order Siti - Tradisional 120k/60m",Toast.LEN
 Box(Modifier.weight(1f).background(Color.White, RoundedCornerShape(14.dp)).padding(10.dp)){
 Column{
 Text("BS Budi S.", fontWeight=FontWeight.Bold, fontSize=12.sp)
-Text("0.6km • 128 job • 4.8", fontSize=9.sp, color=Color.Gray)
+Text("0.6km - 128 job - 4.8", fontSize=9.sp, color=Color.Gray)
 Spacer(Modifier.height(6.dp))
 Button(onClick={Toast.makeText(ctx,"Order Budi S.",Toast.LENGTH_SHORT).show()}, modifier=Modifier.fillMaxWidth().height(36.dp), colors=ButtonDefaults.buttonColors(Orange), shape=RoundedCornerShape(12.dp)){Text("Order Ini", fontSize=10.sp, color=Color.White, fontWeight=FontWeight.Bold)}
 }
@@ -106,7 +105,7 @@ Text("60'", fontWeight=FontWeight.Bold, fontSize=11.sp)
 Text("Rp120k", color=Orange, fontWeight=FontWeight.Bold, fontSize=12.sp)
 }
 Text("Tradisional", fontWeight=FontWeight.Bold, fontSize=12.sp)
-Text("60 menit • Terapis pro", fontSize=9.sp, color=Color.Gray)
+Text("60 menit - Terapis pro", fontSize=9.sp, color=Color.Gray)
 }
 }
 Box(Modifier.weight(1f).background(Color.White, RoundedCornerShape(14.dp)).padding(12.dp)){
@@ -116,7 +115,7 @@ Text("75'", fontWeight=FontWeight.Bold, fontSize=11.sp)
 Text("Rp100k", color=Orange, fontWeight=FontWeight.Bold, fontSize=12.sp)
 }
 Text("Refleksi", fontWeight=FontWeight.Bold, fontSize=12.sp)
-Text("75 menit • Terapis pro", fontSize=9.sp, color=Color.Gray)
+Text("75 menit - Terapis pro", fontSize=9.sp, color=Color.Gray)
 }
 }
 }
@@ -129,7 +128,7 @@ Text("60'", fontWeight=FontWeight.Bold, fontSize=11.sp)
 Text("Rp135k", color=Orange, fontWeight=FontWeight.Bold, fontSize=12.sp)
 }
 Text("Aroma Full Body", fontWeight=FontWeight.Bold, fontSize=11.sp)
-Text("60 menit • Terapis pro", fontSize=9.sp, color=Color.Gray)
+Text("60 menit - Terapis pro", fontSize=9.sp, color=Color.Gray)
 }
 }
 Box(Modifier.weight(1f).background(Color.White, RoundedCornerShape(14.dp)).padding(12.dp)){
@@ -139,7 +138,7 @@ Text("75'", fontWeight=FontWeight.Bold, fontSize=11.sp)
 Text("Rp135k", color=Orange, fontWeight=FontWeight.Bold, fontSize=12.sp)
 }
 Text("Trad+Kerokan", fontWeight=FontWeight.Bold, fontSize=11.sp)
-Text("75 menit • Terapis pro", fontSize=9.sp, color=Color.Gray)
+Text("75 menit - Terapis pro", fontSize=9.sp, color=Color.Gray)
 }
 }
 }
@@ -148,66 +147,31 @@ Button(onClick={Toast.makeText(ctx,"PESAN: Trad 120k/60m, Refleksi 100k/75m, Aro
 Spacer(Modifier.height(12.dp))
 Button(onClick={prefs.edit().putBoolean("isLoggedIn",false).apply(); isLoggedIn=false}, modifier=Modifier.fillMaxWidth().height(50.dp), colors=ButtonDefaults.buttonColors(Color.Red), shape=RoundedCornerShape(12.dp)){Text("LOGOUT", color=Color.White, fontWeight=FontWeight.Bold)}
 Spacer(Modifier.height(16.dp))
+Text("V146 FIX HIJAU: LONCENG + SIDEBAR - Trad 120k/60m, Refleksi 100k/75m, Aroma 135k/60m, Trad+Kerokan 135k/75m", fontSize=8.sp, color=Color.Gray)
 }
 }
 if(showDrawer){
-Box(Modifier.fillMaxSize().background(Color(0x80000000)).clickable{showDrawer=false}){
-LazyColumn(Modifier.fillMaxHeight().width(280.dp).background(Color.White).padding(16.dp)){
+Box(Modifier.fillMaxSize().background(Color(0x99000000))){
+Box(Modifier.fillMaxHeight().width(280.dp).background(Color.White).padding(16.dp)){
+LazyColumn{
 item{
-Row(Modifier.fillMaxWidth().padding(bottom=16.dp), verticalAlignment=Alignment.CenterVertically){
-Box(Modifier.size(48.dp).background(Color.LightGray, RoundedCornerShape(24.dp)), contentAlignment=Alignment.Center){Text("👤", fontSize=24.sp)}
-Spacer(Modifier.width(12.dp))
-Column{
-Text("Pelanggan PijatIN", fontWeight=FontWeight.Bold, fontSize=14.sp)
+Row(Modifier.fillMaxWidth(), horizontalArrangement=Arrangement.SpaceBetween, verticalAlignment=Alignment.CenterVertically){
+Text("Menu PijatIN", fontWeight=FontWeight.Bold, fontSize=16.sp, color=Green)
+Button(onClick={showDrawer=false}, colors=ButtonDefaults.buttonColors(Color.LightGray), shape=RoundedCornerShape(8.dp)){Text("X", fontSize=12.sp, color=Color.Black)}
+}
+Spacer(Modifier.height(8.dp))
 Text(savedPhone.ifEmpty{"083893330346"}, fontSize=11.sp, color=Color.Gray)
-}
-}
+Spacer(Modifier.height(12.dp))
 Divider()
-Spacer(Modifier.height(16.dp))
+Spacer(Modifier.height(12.dp))
 }
-// MENU SIDEBAR SESUAI REQUEST
-item{
-Column(Modifier.fillMaxWidth(), verticalArrangement=Arrangement.spacedBy(4.dp)){
-Row(Modifier.fillMaxWidth().clickable{Toast.makeText(ctx,"Order Saya",Toast.LENGTH_SHORT).show(); showDrawer=false}.padding(12.dp), verticalAlignment=Alignment.CenterVertically){
-Text("📦", fontSize=20.sp)
-Spacer(Modifier.width(16.dp))
-Text("Order", fontSize=14.sp, fontWeight=FontWeight.Bold)
-}
-Row(Modifier.fillMaxWidth().clickable{Toast.makeText(ctx,"Dompet: Rp50.000",Toast.LENGTH_SHORT).show(); showDrawer=false}.padding(12.dp), verticalAlignment=Alignment.CenterVertically){
-Text("👛", fontSize=20.sp)
-Spacer(Modifier.width(16.dp))
-Text("Dompet", fontSize=14.sp, fontWeight=FontWeight.Bold)
-}
-Row(Modifier.fillMaxWidth().clickable{Toast.makeText(ctx,"Therapist Saya",Toast.LENGTH_SHORT).show(); showDrawer=false}.padding(12.dp), verticalAlignment=Alignment.CenterVertically){
-Text("🧑‍⚕️", fontSize=20.sp)
-Spacer(Modifier.width(16.dp))
-Text("Therapist Saya", fontSize=14.sp, fontWeight=FontWeight.Bold)
-}
-Row(Modifier.fillMaxWidth().clickable{Toast.makeText(ctx,"Kupon: 3 tersedia",Toast.LENGTH_SHORT).show(); showDrawer=false}.padding(12.dp), verticalAlignment=Alignment.CenterVertically){
-Text("🎟️", fontSize=20.sp)
-Spacer(Modifier.width(16.dp))
-Text("Kupon", fontSize=14.sp, fontWeight=FontWeight.Bold)
-}
-Row(Modifier.fillMaxWidth().clickable{Toast.makeText(ctx,"Pusat Bantuan",Toast.LENGTH_SHORT).show(); showDrawer=false}.padding(12.dp), verticalAlignment=Alignment.CenterVertically){
-Text("🆘", fontSize=20.sp)
-Spacer(Modifier.width(16.dp))
-Text("Pusat Bantuan", fontSize=14.sp, fontWeight=FontWeight.Bold)
-}
-Row(Modifier.fillMaxWidth().clickable{Toast.makeText(ctx,"Pengaturan",Toast.LENGTH_SHORT).show(); showDrawer=false}.padding(12.dp), verticalAlignment=Alignment.CenterVertically){
-Text("⚙️", fontSize=20.sp)
-Spacer(Modifier.width(16.dp))
-Text("Pengaturan", fontSize=14.sp, fontWeight=FontWeight.Bold)
-}
-Spacer(Modifier.height(24.dp))
-Divider()
-Spacer(Modifier.height(16.dp))
-Row(Modifier.fillMaxWidth().clickable{showDrawer=false}.padding(12.dp), verticalAlignment=Alignment.CenterVertically){
-Text("📍", fontSize=16.sp)
-Spacer(Modifier.width(12.dp))
-Text("Anda berada di Jakarta", fontSize=12.sp, color=Color.Gray)
-Text(" Jakarta", fontSize=12.sp, color=Orange, fontWeight=FontWeight.Bold)
-}
-}
+item{Button(onClick={Toast.makeText(ctx,"Order Saya",Toast.LENGTH_SHORT).show(); showDrawer=false}, modifier=Modifier.fillMaxWidth(), colors=ButtonDefaults.buttonColors(Color.White), shape=RoundedCornerShape(8.dp)){Row(Modifier.fillMaxWidth(), verticalAlignment=Alignment.CenterVertically){Text("[BOX] ", color=Orange, fontWeight=FontWeight.Bold); Text("Order", fontWeight=FontWeight.Bold)}}}
+item{Spacer(Modifier.height(4.dp)); Button(onClick={Toast.makeText(ctx,"Dompet Rp50.000",Toast.LENGTH_SHORT).show(); showDrawer=false}, modifier=Modifier.fillMaxWidth(), colors=ButtonDefaults.buttonColors(Color.White), shape=RoundedCornerShape(8.dp)){Row(Modifier.fillMaxWidth(), verticalAlignment=Alignment.CenterVertically){Text("[WAL] ", color=Orange, fontWeight=FontWeight.Bold); Text("Dompet", fontWeight=FontWeight.Bold)}}}
+item{Spacer(Modifier.height(4.dp)); Button(onClick={Toast.makeText(ctx,"Therapist Saya",Toast.LENGTH_SHORT).show(); showDrawer=false}, modifier=Modifier.fillMaxWidth(), colors=ButtonDefaults.buttonColors(Color.White), shape=RoundedCornerShape(8.dp)){Row(Modifier.fillMaxWidth(), verticalAlignment=Alignment.CenterVertically){Text("[THE] ", color=Orange, fontWeight=FontWeight.Bold); Text("Therapist Saya", fontWeight=FontWeight.Bold)}}}
+item{Spacer(Modifier.height(4.dp)); Button(onClick={Toast.makeText(ctx,"Kupon 3 tersedia",Toast.LENGTH_SHORT).show(); showDrawer=false}, modifier=Modifier.fillMaxWidth(), colors=ButtonDefaults.buttonColors(Color.White), shape=RoundedCornerShape(8.dp)){Row(Modifier.fillMaxWidth(), verticalAlignment=Alignment.CenterVertically){Text("[KUP] ", color=Orange, fontWeight=FontWeight.Bold); Text("Kupon", fontWeight=FontWeight.Bold)}}}
+item{Spacer(Modifier.height(4.dp)); Button(onClick={Toast.makeText(ctx,"Pusat Bantuan",Toast.LENGTH_SHORT).show(); showDrawer=false}, modifier=Modifier.fillMaxWidth(), colors=ButtonDefaults.buttonColors(Color.White), shape=RoundedCornerShape(8.dp)){Row(Modifier.fillMaxWidth(), verticalAlignment=Alignment.CenterVertically){Text("[BANTU] ", color=Orange, fontWeight=FontWeight.Bold); Text("Pusat Bantuan", fontWeight=FontWeight.Bold)}}}
+item{Spacer(Modifier.height(4.dp)); Button(onClick={Toast.makeText(ctx,"Pengaturan",Toast.LENGTH_SHORT).show(); showDrawer=false}, modifier=Modifier.fillMaxWidth(), colors=ButtonDefaults.buttonColors(Color.White), shape=RoundedCornerShape(8.dp)){Row(Modifier.fillMaxWidth(), verticalAlignment=Alignment.CenterVertically){Text("[SET] ", color=Orange, fontWeight=FontWeight.Bold); Text("Pengaturan", fontWeight=FontWeight.Bold)}}}
+item{Spacer(Modifier.height(16.dp)); Divider(); Spacer(Modifier.height(12.dp)); Text("Anda berada di Jakarta", fontSize=12.sp, color=Color.Gray); Text("Jakarta", fontSize=12.sp, color=Orange, fontWeight=FontWeight.Bold)}
 }
 }
 }
@@ -248,7 +212,6 @@ Spacer(Modifier.height(12.dp))
 OutlinedTextField(value=p2, onValueChange={p2=it}, label={Text("Konfirmasi Password *")}, visualTransformation=PasswordVisualTransformation(), modifier=Modifier.fillMaxWidth(), shape=RoundedCornerShape(12.dp), keyboardOptions=KeyboardOptions(keyboardType=KeyboardType.Password, imeAction=ImeAction.Done), keyboardActions=KeyboardActions(onDone={focusManager.clearFocus(); keyboardController?.hide()}), singleLine=true)
 if(p2.isNotEmpty()){Spacer(Modifier.height(8.dp)); Text(if(p1==p2)"Password cocok"else"Tidak sama", color=if(p1==p2)Color(0xFF4CAF50)else Color.Red, fontSize=12.sp, fontWeight=FontWeight.Bold)}
 Spacer(Modifier.height(100.dp))
-}
 }
 }
 }
