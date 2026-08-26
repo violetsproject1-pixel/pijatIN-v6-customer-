@@ -150,10 +150,8 @@ Spacer(Modifier.height(16.dp))
 }
 }
 if(showDrawer){
-Box(Modifier.fillMaxSize().background(Color(0x99000000))){
-Box(Modifier.fillMaxHeight().width(280.dp).background(Color.White).padding(16.dp)){
-LazyColumn{
-item{
+Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha=0.5f))){
+Column(Modifier.fillMaxHeight().width(280.dp).background(Color.White).padding(16.dp)){
 Row(Modifier.fillMaxWidth(), horizontalArrangement=Arrangement.SpaceBetween, verticalAlignment=Alignment.CenterVertically){
 Text("Menu PijatIN", fontWeight=FontWeight.Bold, fontSize=16.sp, color=Green)
 Button(onClick={showDrawer=false}, colors=ButtonDefaults.buttonColors(Color.LightGray), shape=RoundedCornerShape(8.dp)){Text("X", fontSize=12.sp, color=Color.Black)}
@@ -162,15 +160,18 @@ Spacer(Modifier.height(8.dp))
 Text(savedPhone.ifEmpty{"083893330346"}, fontSize=11.sp, color=Color.Gray)
 Spacer(Modifier.height(12.dp))
 Divider()
-Spacer(Modifier.height(12.dp))
-}
-item{Button(onClick={Toast.makeText(ctx,"Order Saya",Toast.LENGTH_SHORT).show(); showDrawer=false}, modifier=Modifier.fillMaxWidth().height(48.dp), colors=ButtonDefaults.buttonColors(Color.White), shape=RoundedCornerShape(8.dp)){Row(Modifier.fillMaxWidth(), verticalAlignment=Alignment.CenterVertically){Text("Order", fontSize=15.sp, fontWeight=FontWeight.Bold, color=Color.Black)}}}
-item{Spacer(Modifier.height(6.dp)); Button(onClick={Toast.makeText(ctx,"Dompet Rp50.000",Toast.LENGTH_SHORT).show(); showDrawer=false}, modifier=Modifier.fillMaxWidth().height(48.dp), colors=ButtonDefaults.buttonColors(Color.White), shape=RoundedCornerShape(8.dp)){Row(Modifier.fillMaxWidth(), verticalAlignment=Alignment.CenterVertically){Text("Dompet", fontSize=15.sp, fontWeight=FontWeight.Bold, color=Color.Black)}}}
-item{Spacer(Modifier.height(6.dp)); Button(onClick={Toast.makeText(ctx,"Therapist Saya",Toast.LENGTH_SHORT).show(); showDrawer=false}, modifier=Modifier.fillMaxWidth().height(48.dp), colors=ButtonDefaults.buttonColors(Color.White), shape=RoundedCornerShape(8.dp)){Row(Modifier.fillMaxWidth(), verticalAlignment=Alignment.CenterVertically){Text("Therapist Saya", fontSize=15.sp, fontWeight=FontWeight.Bold, color=Color.Black)}}}
-item{Spacer(Modifier.height(6.dp)); Button(onClick={Toast.makeText(ctx,"Kupon 3 tersedia",Toast.LENGTH_SHORT).show(); showDrawer=false}, modifier=Modifier.fillMaxWidth().height(48.dp), colors=ButtonDefaults.buttonColors(Color.White), shape=RoundedCornerShape(8.dp)){Row(Modifier.fillMaxWidth(), verticalAlignment=Alignment.CenterVertically){Text("Kupon", fontSize=15.sp, fontWeight=FontWeight.Bold, color=Color.Black)}}}
-item{Spacer(Modifier.height(6.dp)); Button(onClick={Toast.makeText(ctx,"Pusat Bantuan",Toast.LENGTH_SHORT).show(); showDrawer=false}, modifier=Modifier.fillMaxWidth().height(48.dp), colors=ButtonDefaults.buttonColors(Color.White), shape=RoundedCornerShape(8.dp)){Row(Modifier.fillMaxWidth(), verticalAlignment=Alignment.CenterVertically){Text("Pusat Bantuan", fontSize=15.sp, fontWeight=FontWeight.Bold, color=Color.Black)}}}
-item{Spacer(Modifier.height(6.dp)); Button(onClick={Toast.makeText(ctx,"Pengaturan",Toast.LENGTH_SHORT).show(); showDrawer=false}, modifier=Modifier.fillMaxWidth().height(48.dp), colors=ButtonDefaults.buttonColors(Color.White), shape=RoundedCornerShape(8.dp)){Row(Modifier.fillMaxWidth(), verticalAlignment=Alignment.CenterVertically){Text("Pengaturan", fontSize=15.sp, fontWeight=FontWeight.Bold, color=Color.Black)}}}
-}
+Spacer(Modifier.height(16.dp))
+Button(onClick={Toast.makeText(ctx,"Order Saya",Toast.LENGTH_SHORT).show(); showDrawer=false}, modifier=Modifier.fillMaxWidth().height(48.dp), colors=ButtonDefaults.buttonColors(Color.White), shape=RoundedCornerShape(8.dp)){Row(Modifier.fillMaxWidth()){Text("Order", fontSize=15.sp, fontWeight=FontWeight.Bold, color=Color.Black)}}
+Spacer(Modifier.height(6.dp))
+Button(onClick={Toast.makeText(ctx,"Dompet Rp50.000",Toast.LENGTH_SHORT).show(); showDrawer=false}, modifier=Modifier.fillMaxWidth().height(48.dp), colors=ButtonDefaults.buttonColors(Color.White), shape=RoundedCornerShape(8.dp)){Row(Modifier.fillMaxWidth()){Text("Dompet", fontSize=15.sp, fontWeight=FontWeight.Bold, color=Color.Black)}}
+Spacer(Modifier.height(6.dp))
+Button(onClick={Toast.makeText(ctx,"Therapist Saya",Toast.LENGTH_SHORT).show(); showDrawer=false}, modifier=Modifier.fillMaxWidth().height(48.dp), colors=ButtonDefaults.buttonColors(Color.White), shape=RoundedCornerShape(8.dp)){Row(Modifier.fillMaxWidth()){Text("Therapist Saya", fontSize=15.sp, fontWeight=FontWeight.Bold, color=Color.Black)}}
+Spacer(Modifier.height(6.dp))
+Button(onClick={Toast.makeText(ctx,"Kupon 3 tersedia",Toast.LENGTH_SHORT).show(); showDrawer=false}, modifier=Modifier.fillMaxWidth().height(48.dp), colors=ButtonDefaults.buttonColors(Color.White), shape=RoundedCornerShape(8.dp)){Row(Modifier.fillMaxWidth()){Text("Kupon", fontSize=15.sp, fontWeight=FontWeight.Bold, color=Color.Black)}}
+Spacer(Modifier.height(6.dp))
+Button(onClick={Toast.makeText(ctx,"Pusat Bantuan",Toast.LENGTH_SHORT).show(); showDrawer=false}, modifier=Modifier.fillMaxWidth().height(48.dp), colors=ButtonDefaults.buttonColors(Color.White), shape=RoundedCornerShape(8.dp)){Row(Modifier.fillMaxWidth()){Text("Pusat Bantuan", fontSize=15.sp, fontWeight=FontWeight.Bold, color=Color.Black)}}
+Spacer(Modifier.height(6.dp))
+Button(onClick={Toast.makeText(ctx,"Pengaturan",Toast.LENGTH_SHORT).show(); showDrawer=false}, modifier=Modifier.fillMaxWidth().height(48.dp), colors=ButtonDefaults.buttonColors(Color.White), shape=RoundedCornerShape(8.dp)){Row(Modifier.fillMaxWidth()){Text("Pengaturan", fontSize=15.sp, fontWeight=FontWeight.Bold, color=Color.Black)}}
 }
 }
 }
