@@ -5,11 +5,15 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,6 +22,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -25,8 +30,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 data class Layanan(val id: String, val nama: String, val durasi: String, val harga: String, val desc: String)
+data class DrawerItem(val title: String, val icon: ImageVector, val route: String)
 enum class AppScreen { SPLASH, AUTH, HOME }
 
 class MainActivity : ComponentActivity() {
@@ -35,10 +42,16 @@ class MainActivity : ComponentActivity() {
         setContent {
             MaterialTheme {
                 var currentScreen by remember { mutableStateOf(AppScreen.SPLASH) }
+                var userName by remember { mutableStateOf("") }
+                var userPhone by remember { mutableStateOf("") }
+
                 when (currentScreen) {
                     AppScreen.SPLASH -> SplashScreen(onFinish = { currentScreen = AppScreen.AUTH })
-                    AppScreen.AUTH -> AuthScreen(onLoginSuccess = { currentScreen = AppScreen.HOME }, onRegisterSuccess = { currentScreen = AppScreen.HOME })
-                    AppScreen.HOME -> CustomerHomeScreen()
+                    AppScreen.AUTH -> AuthScreen(
+                        onLoginSuccess = { name, phone -> userName = name; userPhone = phone; currentScreen = AppScreen.HOME },
+                        onRegisterSuccess = { name, phone -> userName = name; userPhone = phone; currentScreen = AppScreen.HOME }
+                    )
+                    AppScreen.HOME -> CustomerHomeWithSidebar(userName = userName, userPhone = userPhone)
                 }
             }
         }
@@ -67,13 +80,22 @@ fun SplashScreen(onFinish: () -> Unit) {
 }
 
 @Composable
-fun AuthScreen(onLoginSuccess: () -> Unit, onRegisterSuccess: () -> Unit) {
+fun AuthScreen(onLoginSuccess: (String, String) -> Unit, onRegisterSuccess: (String, String) -> Unit) {
     var isLogin by remember { mutableStateOf(true) }
     var name by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
-    LaunchedEffect(isLoading) { if (isLoading) { delay(1500); isLoading = false; if (isLogin) onLoginSuccess() else onRegisterSuccess() } }
+
+    LaunchedEffect(isLoading) {
+        if (isLoading) {
+            delay(1500)
+            isLoading = false
+            val finalName = if (isLogin) "Customer Gold Lotus" else name
+            if (isLogin) onLoginSuccess(finalName, phone) else onRegisterSuccess(finalName, phone)
+        }
+    }
+
     Column(modifier = Modifier.fillMaxSize().background(Color(0xFFFFF8E1)).padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Spacer(Modifier.height(40.dp))
         Card(shape = RoundedCornerShape(24.dp), elevation = CardDefaults.cardElevation(6.dp), modifier = Modifier.size(80.dp)) {
@@ -106,35 +128,191 @@ fun AuthScreen(onLoginSuccess: () -> Unit, onRegisterSuccess: () -> Unit) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CustomerHomeScreen() {
+fun CustomerHomeWithSidebar(userName: String, userPhone: String) {
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
+    var selectedMenu by remember { mutableStateOf("Beranda") }
+
     val layanan = listOf(
         Layanan("1", "Pijat Full Body", "90 Menit", "Rp 150K", "Relaksasi seluruh tubuh dengan aroma terapi Gold Lotus"),
         Layanan("2", "Pijat Refleksi + Totok Wajah", "60 Menit", "Rp 100K", "Pijat kaki & wajah untuk melancarkan peredaran darah"),
         Layanan("3", "Pijat Tradisional", "60 Menit", "Rp 120K", "Pijat urut tradisional untuk atasi pegal-pegal"),
-        Layanan("4", "Pijat Ibu Hamil", "75 Menit", "Rp 180K", "Khusus ibu hamil dengan terapis bersertifikat"),
-        Layanan("5", "Baby Spa + Pijat Bayi", "45 Menit", "Rp 130K", "Perawatan bayi dengan teknik lembut & aman")
+        Layanan("4", "Pijat Ibu Hamil", "75 Menit", "Rp 180K", "Khusus ibu hamil dengan terapis bersertifikat")
     )
-    Scaffold(topBar = { TopAppBar(title = { Text("PijatIN - GOLD LOTUS SPA", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 16.sp) }, colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFFB8860B))) }) { paddingValues ->
-        LazyColumn(Modifier.fillMaxSize().padding(paddingValues).background(Color(0xFFFFF8E1)).padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            item {
-                Card(colors = CardDefaults.cardColors(containerColor = Color.White), shape = RoundedCornerShape(16.dp), elevation = CardDefaults.cardElevation(4.dp), modifier = Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(16.dp)) {
-                        Text("🪷 Halo, Selamat Datang!", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFFB8860B))
-                        Text("Mau pijat apa hari ini? Pilih layanan Gold Lotus terbaik di Bekasi", fontSize = 12.sp, color = Color.Gray)
+
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            ModalDrawerSheet(drawerContainerColor = Color.White, modifier = Modifier.width(300.dp)) {
+                // HEADER - Nama & WA Customer
+                Box(modifier = Modifier.fillMaxWidth().background(Brush.verticalGradient(listOf(Color(0xFFB8860B), Color(0xFFFF8F00)))).padding(20.dp)) {
+                    Column {
+                        Spacer(Modifier.height(20.dp))
+                        Card(shape = CircleShape, modifier = Modifier.size(64.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("🪷", fontSize = 32.sp) }
+                        }
+                        Spacer(Modifier.height(12.dp))
+                        Text(text = if (userName.isNotBlank()) userName else "Violet Gold Lotus", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                        Spacer(Modifier.height(2.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Phone, contentDescription = null, tint = Color.White.copy(0.9f), modifier = Modifier.size(14.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text(text = if (userPhone.isNotBlank()) userPhone else "0812-3456-7890", color = Color.White.copy(0.9f), fontSize = 13.sp)
+                        }
+                        Spacer(Modifier.height(4.dp))
+                        Text("Customer - Gold Lotus Spa", color = Color(0xFFFFE082), fontSize = 11.sp, letterSpacing = 1.sp)
                     }
+                }
+
+                Spacer(Modifier.height(12.dp))
+
+                // MENU LIST
+                val menus = listOf(
+                    DrawerItem("Beranda", Icons.Default.Home, "home"),
+                    DrawerItem("Order Saya", Icons.Default.ShoppingBag, "order"),
+                    DrawerItem("Saldo", Icons.Default.AccountBalanceWallet, "saldo"),
+                    DrawerItem("Therapist Saya", Icons.Default.Favorite, "therapist"),
+                    DrawerItem("KUPON", Icons.Default.LocalOffer, "kupon"),
+                    DrawerItem("Pengaturan Profil", Icons.Default.Person, "profil")
+                )
+
+                menus.forEach { item ->
+                    NavigationDrawerItem(
+                        icon = { Icon(item.icon, contentDescription = null, tint = if (selectedMenu == item.title) Color(0xFFB8860B) else Color.Gray) },
+                        label = { Text(item.title, fontWeight = if (selectedMenu == item.title) FontWeight.Bold else FontWeight.Normal, color = if (selectedMenu == item.title) Color(0xFFB8860B) else Color.Black) },
+                        selected = selectedMenu == item.title,
+                        onClick = { selectedMenu = item.title; scope.launch { drawerState.close() } },
+                        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
+                        colors = NavigationDrawerItemDefaults.colors(selectedContainerColor = Color(0xFFFFF8E1), unselectedContainerColor = Color.Transparent)
+                    )
+                }
+
+                Spacer(Modifier.weight(1f))
+                Divider()
+                NavigationDrawerItem(
+                    icon = { Icon(Icons.Default.Logout, contentDescription = null, tint = Color.Red) },
+                    label = { Text("Keluar", color = Color.Red) },
+                    selected = false,
+                    onClick = {},
+                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                )
+                Spacer(Modifier.height(16.dp))
+            }
+        }
+    ) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text("PijatIN - GOLD LOTUS SPA", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 15.sp) },
+                    navigationIcon = {
+                        IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                            Icon(Icons.Default.Menu, contentDescription = "Menu", tint = Color.White)
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFFB8860B)),
+                    actions = {
+                        IconButton(onClick = {}) { Icon(Icons.Default.Notifications, contentDescription = null, tint = Color.White) }
+                    }
+                )
+            }
+        ) { paddingValues ->
+            when (selectedMenu) {
+                "Order Saya" -> OrderScreen()
+                "Saldo" -> SaldoScreen()
+                "Therapist Saya" -> TherapistScreen()
+                "KUPON" -> KuponScreen()
+                "Pengaturan Profil" -> ProfilScreen(name = userName, phone = userPhone)
+                else -> HomeLayananContent(layanan = layanan, paddingValues = paddingValues)
+            }
+        }
+    }
+}
+
+@Composable
+fun HomeLayananContent(layanan: List<Layanan>, paddingValues: PaddingValues) {
+    LazyColumn(Modifier.fillMaxSize().padding(paddingValues).background(Color(0xFFFFF8E1)).padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        item {
+            Card(colors = CardDefaults.cardColors(containerColor = Color.White), shape = RoundedCornerShape(16.dp), elevation = CardDefaults.cardElevation(4.dp), modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp)) {
+                    Text("🪷 Halo, Selamat Datang!", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFFB8860B))
+                    Text("Mau pijat apa hari ini? Pilih layanan Gold Lotus terbaik di Bekasi", fontSize = 12.sp, color = Color.Gray)
                 }
             }
-            items(layanan) { item ->
-                Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(4.dp)) {
-                    Column(Modifier.padding(16.dp)) {
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text(item.nama, fontWeight = FontWeight.Bold, fontSize = 16.sp); Text(item.harga, fontWeight = FontWeight.Bold, color = Color(0xFFB8860B)) }
-                        Text(item.durasi, fontSize = 11.sp, color = Color.White, modifier = Modifier.background(Color(0xFFB8860B), RoundedCornerShape(6.dp)).padding(horizontal = 8.dp, vertical = 2.dp))
-                        Spacer(Modifier.height(6.dp))
-                        Text(item.desc, fontSize = 12.sp, color = Color.Gray)
-                        Spacer(Modifier.height(12.dp))
-                        Button(onClick = {}, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFB8860B))) { Text("Pesan Sekarang - ${item.nama}", fontWeight = FontWeight.Bold) }
-                    }
+        }
+        items(layanan) { item ->
+            Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(4.dp)) {
+                Column(Modifier.padding(16.dp)) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text(item.nama, fontWeight = FontWeight.Bold, fontSize = 16.sp); Text(item.harga, fontWeight = FontWeight.Bold, color = Color(0xFFB8860B)) }
+                    Text(item.durasi, fontSize = 11.sp, color = Color.White, modifier = Modifier.background(Color(0xFFB8860B), RoundedCornerShape(6.dp)).padding(horizontal = 8.dp, vertical = 2.dp))
+                    Spacer(Modifier.height(6.dp))
+                    Text(item.desc, fontSize = 12.sp, color = Color.Gray)
+                    Spacer(Modifier.height(12.dp))
+                    Button(onClick = {}, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFB8860B))) { Text("Pesan Sekarang - ${item.nama}", fontWeight = FontWeight.Bold) }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun OrderScreen() {
+    Column(Modifier.fillMaxSize().background(Color(0xFFFFF8E1)).padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+        Icon(Icons.Default.ShoppingBag, contentDescription = null, modifier = Modifier.size(80.dp), tint = Color(0xFFB8860B).copy(0.5f))
+        Spacer(Modifier.height(16.dp))
+        Text("Order Saya", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFFB8860B))
+        Text("Belum ada order", color = Color.Gray)
+    }
+}
+
+@Composable
+fun SaldoScreen() {
+    Column(Modifier.fillMaxSize().background(Color(0xFFFFF8E1)).padding(16.dp)) {
+        Card(shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFFB8860B)), modifier = Modifier.fillMaxWidth()) {
+            Column(Modifier.padding(20.dp)) {
+                Text("Saldo PijatIN", color = Color.White.copy(0.8f), fontSize = 13.sp)
+                Spacer(Modifier.height(8.dp))
+                Text("Rp 0", color = Color.White, fontSize = 32.sp, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(16.dp))
+                Button(onClick = {}, colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color(0xFFB8860B)), shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth()) { Text("Top Up Saldo", fontWeight = FontWeight.Bold) }
+            }
+        }
+    }
+}
+
+@Composable
+fun TherapistScreen() {
+    Column(Modifier.fillMaxSize().background(Color(0xFFFFF8E1)).padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+        Icon(Icons.Default.Favorite, contentDescription = null, modifier = Modifier.size(80.dp), tint = Color(0xFFB8860B).copy(0.5f))
+        Spacer(Modifier.height(16.dp))
+        Text("Therapist Saya", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFFB8860B))
+        Text("Belum ada therapist favorit", color = Color.Gray)
+    }
+}
+
+@Composable
+fun KuponScreen() {
+    Column(Modifier.fillMaxSize().background(Color(0xFFFFF8E1)).padding(16.dp)) {
+        Card(shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(4.dp), modifier = Modifier.fillMaxWidth()) {
+            Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                Card(shape = RoundedCornerShape(10.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFFB8860B))) { Text("50% OFF", color = Color.White, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) }
+                Spacer(Modifier.width(12.dp))
+                Column { Text("GOLD50", fontWeight = FontWeight.Bold); Text("Diskon 50% untuk order pertama", fontSize = 12.sp, color = Color.Gray) }
+            }
+        }
+    }
+}
+
+@Composable
+fun ProfilScreen(name: String, phone: String) {
+    Column(Modifier.fillMaxSize().background(Color(0xFFFFF8E1)).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Card(shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White), modifier = Modifier.fillMaxWidth()) {
+            Column(Modifier.padding(16.dp)) {
+                Text("Pengaturan Profil", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFFB8860B))
+                Spacer(Modifier.height(12.dp))
+                OutlinedTextField(value = name, onValueChange = {}, label = { Text("Nama Customer") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), readOnly = true, leadingIcon = { Icon(Icons.Default.Person, null) })
+                OutlinedTextField(value = phone, onValueChange = {}, label = { Text("Nomor WA / No. HP") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), readOnly = true, leadingIcon = { Icon(Icons.Default.Phone, null) })
+                Spacer(Modifier.height(12.dp))
+                Button(onClick = {}, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFB8860B))) { Text("Edit Profil") }
             }
         }
     }
