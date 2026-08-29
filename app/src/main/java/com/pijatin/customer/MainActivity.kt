@@ -20,6 +20,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -144,10 +145,7 @@ fun CustomerHomeWithSidebar(userName: String, userPhone: String) {
                     }
                 }
                 Spacer(Modifier.height(12.dp))
-
-                // MENU TANPA ICON ANEH - CUMA TEXT + EMOJI - PASTI KOMPILASI
                 val menus = listOf("Beranda", "Order", "Saldo", "Therapist Saya", "KUPON", "Pengaturan Profil")
-
                 menus.forEach { title ->
                     NavigationDrawerItem(
                         icon = {
@@ -164,23 +162,14 @@ fun CustomerHomeWithSidebar(userName: String, userPhone: String) {
                         },
                         label = { Text(title, fontWeight = if (selected == title) FontWeight.Bold else FontWeight.Normal) },
                         selected = selected == title,
-                        onClick = {
-                            selected = title
-                            scope.launch { drawerState.close() }
-                        },
+                        onClick = { selected = title; scope.launch { drawerState.close() } },
                         modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
                         colors = NavigationDrawerItemDefaults.colors(selectedContainerColor = Color(0xFFFFF8E1))
                     )
                 }
                 Spacer(Modifier.weight(1f))
                 Divider()
-                NavigationDrawerItem(
-                    icon = { Text("🚪") },
-                    label = { Text("Keluar", color = Color.Red) },
-                    selected = false,
-                    onClick = {},
-                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
-                )
+                NavigationDrawerItem(icon = { Text("🚪") }, label = { Text("Keluar", color = Color.Red) }, selected = false, onClick = {}, modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding))
                 Spacer(Modifier.height(16.dp))
             }
         }
@@ -189,11 +178,7 @@ fun CustomerHomeWithSidebar(userName: String, userPhone: String) {
             topBar = {
                 TopAppBar(
                     title = { Text("PijatIN - GOLD LOTUS SPA", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 15.sp) },
-                    navigationIcon = {
-                        IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                            Icon(Icons.Default.Menu, null, tint = Color.White)
-                        }
-                    },
+                    navigationIcon = { IconButton(onClick = { scope.launch { drawerState.open() } }) { Icon(Icons.Default.Menu, null, tint = Color.White) } },
                     colors = TopAppBarDefaults.topAppBarColors(Color(0xFFB8860B))
                 )
             }
@@ -204,11 +189,7 @@ fun CustomerHomeWithSidebar(userName: String, userPhone: String) {
                 }
                 "Saldo" -> Column(Modifier.fillMaxSize().padding(pad).background(Color(0xFFFFF8E1)).padding(16.dp)) {
                     Card(shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(Color(0xFFB8860B)), modifier = Modifier.fillMaxWidth()) {
-                        Column(Modifier.padding(20.dp)) {
-                            Text("Saldo PijatIN", color = Color.White.copy(0.8f)); Text("Rp 0", color = Color.White, fontSize = 32.sp, fontWeight = FontWeight.Bold)
-                            Spacer(Modifier.height(16.dp))
-                            Button(onClick = {}, colors = ButtonDefaults.buttonColors(Color.White, contentColor = Color(0xFFB8860B)), modifier = Modifier.fillMaxWidth()) { Text("Top Up Saldo") }
-                        }
+                        Column(Modifier.padding(20.dp)) { Text("Saldo PijatIN", color = Color.White.copy(0.8f)); Text("Rp 0", color = Color.White, fontSize = 32.sp, fontWeight = FontWeight.Bold); Spacer(Modifier.height(16.dp)); Button(onClick = {}, colors = ButtonDefaults.buttonColors(Color.White, contentColor = Color(0xFFB8860B)), modifier = Modifier.fillMaxWidth()) { Text("Top Up Saldo") } }
                     }
                 }
                 "Therapist Saya" -> Box(Modifier.fillMaxSize().padding(pad).background(Color(0xFFFFF8E1)), contentAlignment = Alignment.Center) {
@@ -218,8 +199,7 @@ fun CustomerHomeWithSidebar(userName: String, userPhone: String) {
                     Card(shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(Color.White), modifier = Modifier.fillMaxWidth()) {
                         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                             Card(colors = CardDefaults.cardColors(Color(0xFFB8860B))) { Text("50% OFF", color = Color.White, modifier = Modifier.padding(12.dp), fontWeight = FontWeight.Bold) }
-                            Spacer(Modifier.width(12.dp))
-                            Column { Text("GOLD50", fontWeight = FontWeight.Bold); Text("Diskon 50% order pertama", fontSize = 12.sp, color = Color.Gray) }
+                            Spacer(Modifier.width(12.dp)); Column { Text("GOLD50", fontWeight = FontWeight.Bold); Text("Diskon 50% order pertama", fontSize = 12.sp, color = Color.Gray) }
                         }
                     }
                 }
@@ -227,28 +207,15 @@ fun CustomerHomeWithSidebar(userName: String, userPhone: String) {
                     Card(shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(Color.White), modifier = Modifier.fillMaxWidth()) {
                         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                             Text("Pengaturan Profil", fontWeight = FontWeight.Bold, color = Color(0xFFB8860B), fontSize = 18.sp)
-                            OutlinedTextField(value = if (userName.isNotBlank()) userName else "Violet Gold Lotus", onValueChange = {}, label = { Text("Nama Customer") }, modifier = Modifier.fillMaxWidth(), readOnly = true, leadingIcon = { Icon(Icons.Default.Person, null) })
-                            OutlinedTextField(value = if (userPhone.isNotBlank()) userPhone else "0812-3456-7890", onValueChange = {}, label = { Text("Nomor WA Customer") }, modifier = Modifier.fillMaxWidth(), readOnly = true, leadingIcon = { Icon(Icons.Default.Phone, null) })
+                            OutlinedTextField(if (userName.isNotBlank()) userName else "Violet Gold Lotus", {}, label = { Text("Nama Customer") }, modifier = Modifier.fillMaxWidth(), readOnly = true, leadingIcon = { Icon(Icons.Default.Person, null) })
+                            OutlinedTextField(if (userPhone.isNotBlank()) userPhone else "0812-3456-7890", {}, label = { Text("Nomor WA Customer") }, modifier = Modifier.fillMaxWidth(), readOnly = true, leadingIcon = { Icon(Icons.Default.Phone, null) })
                             Button(onClick = {}, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(Color(0xFFB8860B))) { Text("Edit Profil") }
                         }
                     }
                 }
                 else -> LazyColumn(Modifier.fillMaxSize().padding(pad).background(Color(0xFFFFF8E1)).padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    item {
-                        Card(shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(Color.White), modifier = Modifier.fillMaxWidth()) {
-                            Column(Modifier.padding(16.dp)) { Text("🪷 Halo, Selamat Datang!", fontWeight = FontWeight.Bold, color = Color(0xFFB8860B)); Text("Mau pijat apa hari ini?", fontSize = 12.sp, color = Color.Gray) }
-                        }
-                    }
-                    items(layanan) { item ->
-                        Card(shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(Color.White), modifier = Modifier.fillMaxWidth()) {
-                            Column(Modifier.padding(16.dp)) {
-                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text(item.nama, fontWeight = FontWeight.Bold); Text(item.harga, fontWeight = FontWeight.Bold, color = Color(0xFFB8860B)) }
-                                Text(item.desc, fontSize = 12.sp, color = Color.Gray)
-                                Spacer(Modifier.height(12.dp))
-                                Button(onClick = {}, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(Color(0xFFB8860B))) { Text("Pesan Sekarang - ${item.nama}") }
-                            }
-                        }
-                    }
+                    item { Card(shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(Color.White), modifier = Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp)) { Text("🪷 Halo, Selamat Datang!", fontWeight = FontWeight.Bold, color = Color(0xFFB8860B)); Text("Mau pijat apa hari ini?", fontSize = 12.sp, color = Color.Gray) } } }
+                    items(layanan) { item -> Card(shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(Color.White), modifier = Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp)) { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text(item.nama, fontWeight = FontWeight.Bold); Text(item.harga, fontWeight = FontWeight.Bold, color = Color(0xFFB8860B)) }; Text(item.desc, fontSize = 12.sp, color = Color.Gray); Spacer(Modifier.height(12.dp)); Button(onClick = {}, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(Color(0xFFB8860B))) { Text("Pesan Sekarang") } } } }
                 }
             }
         }
