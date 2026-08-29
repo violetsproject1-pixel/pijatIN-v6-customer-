@@ -209,7 +209,9 @@ Button(onClick = { currentPage = "HOME" }, modifier = Modifier.fillMaxWidth(), c
 if (currentPage == "BANTUAN") {
 Text("Pusat Bantuan", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Green)
 Spacer(Modifier.height(12.dp))
-Box(Modifier.fillMaxWidth().background(Color.White, RoundedCornerShape(12.dp)).padding(12.dp)) { Text("WA CS: 0812-3456-7890", fontSize = 13.sp) }
+Box(Modifier.fillMaxWidth().background(Color.White, RoundedCornerShape(12.dp)).padding(12.dp)) { Text("WA CS: 083893330346", fontSize = 13.sp, fontWeight = FontWeight.Bold) }
+Spacer(Modifier.height(8.dp))
+Box(Modifier.fillMaxWidth().background(Color.White, RoundedCornerShape(12.dp)).padding(12.dp)) { Text("Chat CS 24 jam untuk bantuan order, pembayaran, komplain", fontSize = 11.sp, color = Color.Gray) }
 Spacer(Modifier.height(16.dp))
 Button(onClick = { currentPage = "HOME" }, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(Green)) { Text("Kembali", color = Color.White) }
 }
@@ -230,10 +232,9 @@ Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, v
 Text("Menu PijatIN", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Green)
 Button(onClick = { showDrawer = false }, colors = ButtonDefaults.buttonColors(Color.LightGray), shape = RoundedCornerShape(8.dp)) { Text("X", fontSize = 12.sp, color = Color.Black) }
 }
-Spacer(Modifier.height(8.dp))
-Text(savedPhone, fontSize = 11.sp, color = Color.Gray)
-Text("Saldo Rp $saldo", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Orange)
 Spacer(Modifier.height(12.dp))
+Text("Saldo Rp $saldo", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Orange)
+Spacer(Modifier.height(16.dp))
 Divider()
 Spacer(Modifier.height(16.dp))
 Text("Order", fontSize = 15.sp, fontWeight = FontWeight.Bold, modifier = Modifier.fillMaxWidth().clickable { currentPage = "ORDER"; showDrawer = false }.padding(12.dp))
