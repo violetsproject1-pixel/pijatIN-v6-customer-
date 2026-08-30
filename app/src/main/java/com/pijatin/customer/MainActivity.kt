@@ -7,15 +7,16 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -32,7 +33,8 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-data class Layanan(val id: String, val nama: String, val harga: String, val desc: String)
+data class Layanan(val id: String, val nama: String, val durasi: String, val harga: String, val desc: String)
+data class Terapis(val nama: String, val rating: String, val jarak: String, val status: String)
 enum class AppScreen { SPLASH, AUTH, HOME }
 
 class MainActivity : ComponentActivity() {
@@ -49,7 +51,11 @@ class MainActivity : ComponentActivity() {
                         onLoginSuccess = { n, p -> userName = n; userPhone = p; currentScreen = AppScreen.HOME },
                         onRegisterSuccess = { n, p -> userName = n; userPhone = p; currentScreen = AppScreen.HOME }
                     )
-                    AppScreen.HOME -> CustomerHomeWithSidebar(userName, userPhone)
+                    AppScreen.HOME -> CustomerHomeWithSidebar(
+                        userName = userName,
+                        userPhone = userPhone,
+                        onLogout = { currentScreen = AppScreen.AUTH }
+                    )
                 }
             }
         }
@@ -117,14 +123,24 @@ fun AuthScreen(onLoginSuccess: (String, String) -> Unit, onRegisterSuccess: (Str
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CustomerHomeWithSidebar(userName: String, userPhone: String) {
+fun CustomerHomeWithSidebar(userName: String, userPhone: String, onLogout: () -> Unit) {
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     var selected by remember { mutableStateOf("Beranda") }
+
+    // UPDATED LAYANAN SESUAI REQUEST
     val layanan = listOf(
-        Layanan("1", "Pijat Full Body 90 Menit", "Rp 150K", "Relaksasi Gold Lotus"),
-        Layanan("2", "Pijat Refleksi + Totok Wajah", "Rp 100K", "Pijat kaki & wajah"),
-        Layanan("3", "Pijat Tradisional 60 Menit", "Rp 120K", "Atasi pegal-pegal")
+        Layanan("1", "Pijat Full Body", "90 Menit", "Rp 150K", "Relaksasi Gold Lotus"),
+        Layanan("2", "Pijat Refleksi", "60 Menit", "Rp 100K", "Pijat kaki, tangan dan punggung"),
+        Layanan("3", "Pijat Tradisional", "60 Menit", "Rp 120K", "Atasi pegal-pegal"),
+        Layanan("4", "Pijat Tradisional + Kerokan", "75 Menit", "Rp 135K", "Pijat tradisional plus kerokan masuk angin")
+    )
+
+    val terapisList = listOf(
+        Terapis("Sari Gold Lotus", "4.9", "0.5 km", "Available"),
+        Terapis("Dewi Spa", "4.8", "0.8 km", "Available"),
+        Terapis("Maya Pijat", "4.7", "1.2 km", "Busy"),
+        Terapis("Luna Lotus", "5.0", "1.5 km", "Available")
     )
 
     ModalNavigationDrawer(
@@ -138,9 +154,9 @@ fun CustomerHomeWithSidebar(userName: String, userPhone: String) {
                             Box(Modifier.fillMaxSize().background(Color.White), contentAlignment = Alignment.Center) { Text("🪷", fontSize = 32.sp) }
                         }
                         Spacer(Modifier.height(12.dp))
-                        Text(if (userName.isNotBlank()) userName else "Violet Gold Lotus", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                        Text(if (userName.isNotBlank()) userName else "Customer Gold Lotus", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                         Spacer(Modifier.height(4.dp))
-                        Text(if (userPhone.isNotBlank()) userPhone else "0812-3456-7890", color = Color.White.copy(0.9f), fontSize = 13.sp)
+                        Text(if (userPhone.isNotBlank()) userPhone else "081234567890", color = Color.White.copy(0.9f), fontSize = 13.sp)
                         Text("Customer - Gold Lotus Spa", color = Color(0xFFFFE082), fontSize = 11.sp)
                     }
                 }
@@ -169,7 +185,20 @@ fun CustomerHomeWithSidebar(userName: String, userPhone: String) {
                 }
                 Spacer(Modifier.weight(1f))
                 Divider()
-                NavigationDrawerItem(icon = { Text("🚪") }, label = { Text("Keluar", color = Color.Red) }, selected = false, onClick = {}, modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding))
+                // FIX KELUAR BUTTON - SEKARANG BALIK KE LOGIN
+                NavigationDrawerItem(
+                    icon = { Text("🚪") },
+                    label = { Text("Keluar", color = Color.Red, fontWeight = FontWeight.Bold) },
+                    selected = false,
+                    onClick = {
+                        scope.launch {
+                            drawerState.close()
+                            delay(200)
+                            onLogout()
+                        }
+                    },
+                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                )
                 Spacer(Modifier.height(16.dp))
             }
         }
@@ -207,15 +236,68 @@ fun CustomerHomeWithSidebar(userName: String, userPhone: String) {
                     Card(shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(Color.White), modifier = Modifier.fillMaxWidth()) {
                         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                             Text("Pengaturan Profil", fontWeight = FontWeight.Bold, color = Color(0xFFB8860B), fontSize = 18.sp)
-                            OutlinedTextField(if (userName.isNotBlank()) userName else "Violet Gold Lotus", {}, label = { Text("Nama Customer") }, modifier = Modifier.fillMaxWidth(), readOnly = true, leadingIcon = { Icon(Icons.Default.Person, null) })
-                            OutlinedTextField(if (userPhone.isNotBlank()) userPhone else "0812-3456-7890", {}, label = { Text("Nomor WA Customer") }, modifier = Modifier.fillMaxWidth(), readOnly = true, leadingIcon = { Icon(Icons.Default.Phone, null) })
+                            OutlinedTextField(if (userName.isNotBlank()) userName else "Customer Gold Lotus", {}, label = { Text("Nama Customer") }, modifier = Modifier.fillMaxWidth(), readOnly = true, leadingIcon = { Icon(Icons.Default.Person, null) })
+                            OutlinedTextField(if (userPhone.isNotBlank()) userPhone else "081234567890", {}, label = { Text("Nomor WA Customer") }, modifier = Modifier.fillMaxWidth(), readOnly = true, leadingIcon = { Icon(Icons.Default.Phone, null) })
                             Button(onClick = {}, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(Color(0xFFB8860B))) { Text("Edit Profil") }
                         }
                     }
                 }
                 else -> LazyColumn(Modifier.fillMaxSize().padding(pad).background(Color(0xFFFFF8E1)).padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    item { Card(shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(Color.White), modifier = Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp)) { Text("🪷 Halo, Selamat Datang!", fontWeight = FontWeight.Bold, color = Color(0xFFB8860B)); Text("Mau pijat apa hari ini?", fontSize = 12.sp, color = Color.Gray) } } }
-                    items(layanan) { item -> Card(shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(Color.White), modifier = Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp)) { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text(item.nama, fontWeight = FontWeight.Bold); Text(item.harga, fontWeight = FontWeight.Bold, color = Color(0xFFB8860B)) }; Text(item.desc, fontSize = 12.sp, color = Color.Gray); Spacer(Modifier.height(12.dp)); Button(onClick = {}, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(Color(0xFFB8860B))) { Text("Pesan Sekarang") } } } }
+                    item {
+                        Card(shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(Color.White), modifier = Modifier.fillMaxWidth()) {
+                            Column(Modifier.padding(16.dp)) { Text("🪷 Halo, Selamat Datang!", fontWeight = FontWeight.Bold, color = Color(0xFFB8860B)); Text("Mau pijat apa hari ini?", fontSize = 12.sp, color = Color.Gray) }
+                        }
+                    }
+                    // FITUR BARU: TERAPIS TERDEKAT (Gambar No 2)
+                    item {
+                        Column {
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                Text("Terapis Terdekat", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFFB8860B))
+                                Text("Lihat Semua", fontSize = 12.sp, color = Color(0xFFB8860B), fontWeight = FontWeight.Bold)
+                            }
+                            Spacer(Modifier.height(10.dp))
+                            LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                items(terapisList) { terapis ->
+                                    Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(Color.White), elevation = CardDefaults.cardElevation(3.dp), modifier = Modifier.width(150.dp)) {
+                                        Column(Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                            Card(shape = CircleShape, modifier = Modifier.size(50.dp), colors = CardDefaults.cardColors(Color(0xFFFFF8E1))) {
+                                                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("💆‍♀️", fontSize = 24.sp) }
+                                            }
+                                            Spacer(Modifier.height(6.dp))
+                                            Text(terapis.nama, fontWeight = FontWeight.Bold, fontSize = 12.sp, maxLines = 1)
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Icon(Icons.Default.Star, null, tint = Color(0xFFFFC107), modifier = Modifier.size(12.dp))
+                                                Spacer(Modifier.width(2.dp))
+                                                Text(terapis.rating, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                                Spacer(Modifier.width(6.dp))
+                                                Text(terapis.jarak, fontSize = 10.sp, color = Color.Gray)
+                                            }
+                                            Spacer(Modifier.height(4.dp))
+                                            Card(shape = RoundedCornerShape(6.dp), colors = CardDefaults.cardColors(if (terapis.status == "Available") Color(0xFF4CAF50) else Color.Gray)) {
+                                                Text(terapis.status, color = Color.White, fontSize = 9.sp, modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp))
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    // LIST LAYANAN UPDATED
+                    items(layanan) { item ->
+                        Card(shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(Color.White), elevation = CardDefaults.cardElevation(2.dp), modifier = Modifier.fillMaxWidth()) {
+                            Column(Modifier.padding(16.dp)) {
+                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(item.nama, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                                        Text("${item.durasi} - ${item.desc}", fontSize = 11.sp, color = Color.Gray)
+                                    }
+                                    Text(item.harga, fontWeight = FontWeight.Bold, color = Color(0xFFB8860B), fontSize = 14.sp)
+                                }
+                                Spacer(Modifier.height(12.dp))
+                                Button(onClick = {}, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), colors = ButtonDefaults.buttonColors(Color(0xFFB8860B))) { Text("Pesan Sekarang", fontWeight = FontWeight.Bold) }
+                            }
+                        }
+                    }
                 }
             }
         }
