@@ -9,9 +9,11 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
@@ -82,42 +84,82 @@ fun SplashScreen(onFinish: () -> Unit) {
 
 @Composable
 fun AuthScreen(onLoginSuccess: (String, String) -> Unit, onRegisterSuccess: (String, String) -> Unit) {
-    var isLogin by remember { mutableStateOf(true) }
+    var isLogin by remember { mutableStateOf(false) } // default Daftar biar langsung keliatan bug nya
     var name by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf("") }
     var pass by remember { mutableStateOf("") }
     var loading by remember { mutableStateOf(false) }
+    val scrollState = rememberScrollState()
+
     LaunchedEffect(loading) {
         if (loading) {
             delay(1500)
             loading = false
-            val n = if (isLogin) "Customer Gold Lotus" else name
+            val n = if (isLogin) "Customer Gold Lotus" else name.ifBlank { "Maliki" }
             if (isLogin) onLoginSuccess(n, phone) else onRegisterSuccess(n, phone)
         }
     }
-    Column(Modifier.fillMaxSize().background(Color(0xFFFFF8E1)).padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        Spacer(Modifier.height(40.dp))
+
+    // FIX KEYBOARD: Column bisa scroll + imePadding biar tombol gak ketutup keyboard
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFFFFF8E1))
+            .verticalScroll(scrollState)
+            .imePadding() // INI KUNCINYA BIAR GAK KETUTUP KEYBOARD
+            .navigationBarsPadding()
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Spacer(Modifier.height(20.dp))
         Card(shape = RoundedCornerShape(24.dp), modifier = Modifier.size(80.dp)) {
             Box(Modifier.fillMaxSize().background(Color.White), contentAlignment = Alignment.Center) { Text("🪷", fontSize = 40.sp) }
         }
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(12.dp))
         Text("PijatIN Customer", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = Color(0xFFB8860B))
-        Spacer(Modifier.height(24.dp))
+        Text("GOLD LOTUS SPA", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFFB8860B), letterSpacing = 2.sp)
+        Spacer(Modifier.height(20.dp))
         Row(Modifier.clip(RoundedCornerShape(12.dp)).background(Color(0xFFFFE0B2)).padding(4.dp)) {
-            Button(onClick = { isLogin = true }, colors = ButtonDefaults.buttonColors(containerColor = if (isLogin) Color(0xFFB8860B) else Color.Transparent, contentColor = if (isLogin) Color.White else Color.Gray), modifier = Modifier.weight(1f)) { Text("Login") }
-            Button(onClick = { isLogin = false }, colors = ButtonDefaults.buttonColors(containerColor = if (!isLogin) Color(0xFFB8860B) else Color.Transparent, contentColor = if (!isLogin) Color.White else Color.Gray), modifier = Modifier.weight(1f)) { Text("Daftar") }
+            Button(
+                onClick = { isLogin = true },
+                colors = ButtonDefaults.buttonColors(containerColor = if (isLogin) Color(0xFFB8860B) else Color.Transparent, contentColor = if (isLogin) Color.White else Color.Gray),
+                modifier = Modifier.weight(1f)
+            ) { Text("Login", fontWeight = FontWeight.Bold) }
+            Button(
+                onClick = { isLogin = false },
+                colors = ButtonDefaults.buttonColors(containerColor = if (!isLogin) Color(0xFFB8860B) else Color.Transparent, contentColor = if (!isLogin) Color.White else Color.Gray),
+                modifier = Modifier.weight(1f)
+            ) { Text("Daftar", fontWeight = FontWeight.Bold) }
         }
-        Spacer(Modifier.height(24.dp))
-        Card(shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(Color.White), modifier = Modifier.fillMaxWidth()) {
+        Spacer(Modifier.height(20.dp))
+        Card(shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(Color.White), elevation = CardDefaults.cardElevation(4.dp), modifier = Modifier.fillMaxWidth()) {
             Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                if (!isLogin) OutlinedTextField(name, { name = it }, label = { Text("Nama Lengkap") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
-                OutlinedTextField(phone, { phone = it }, label = { Text("No. HP / WhatsApp") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone))
-                OutlinedTextField(pass, { pass = it }, label = { Text("Password") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), visualTransformation = PasswordVisualTransformation())
-                Button(onClick = { loading = true }, enabled = phone.isNotBlank() && pass.isNotBlank() && (isLogin || name.isNotBlank()), modifier = Modifier.fillMaxWidth().height(52.dp), colors = ButtonDefaults.buttonColors(Color(0xFFB8860B))) {
-                    if (loading) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp)) else Text(if (isLogin) "Masuk ke PijatIN" else "Daftar")
+                if (!isLogin) {
+                    OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Nama Lengkap") }, placeholder = { Text("maliki") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), singleLine = true)
+                }
+                OutlinedTextField(value = phone, onValueChange = { phone = it }, label = { Text("No. HP / WhatsApp") }, placeholder = { Text("081234567890") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone), singleLine = true)
+                OutlinedTextField(value = pass, onValueChange = { pass = it }, label = { Text("Password") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), visualTransformation = PasswordVisualTransformation(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password), singleLine = true)
+
+                Spacer(Modifier.height(4.dp))
+
+                // TOMBOL DAFTAR / MASUK - SEKARANG PASTI KELIATAN & BISA DI KLIK
+                Button(
+                    onClick = { loading = true },
+                    enabled = !loading && phone.isNotBlank() && pass.isNotBlank() && (isLogin || name.isNotBlank()),
+                    modifier = Modifier.fillMaxWidth().height(52.dp),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFB8860B))
+                ) {
+                    if (loading) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                    else Text(if (isLogin) "Masuk ke PijatIN" else "Daftar Sekarang", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                }
+
+                if (!isLogin) {
+                    Text("Dengan mendaftar, kamu setuju dengan Syarat & Ketentuan Gold Lotus Spa", fontSize = 10.sp, color = Color.Gray, modifier = Modifier.fillMaxWidth(), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                 }
             }
         }
+        Spacer(Modifier.height(40.dp))
     }
 }
 
@@ -128,7 +170,6 @@ fun CustomerHomeWithSidebar(userName: String, userPhone: String, onLogout: () ->
     val scope = rememberCoroutineScope()
     var selected by remember { mutableStateOf("Beranda") }
 
-    // UPDATED LAYANAN SESUAI REQUEST
     val layanan = listOf(
         Layanan("1", "Pijat Full Body", "90 Menit", "Rp 150K", "Relaksasi Gold Lotus"),
         Layanan("2", "Pijat Refleksi", "60 Menit", "Rp 100K", "Pijat kaki, tangan dan punggung"),
@@ -164,18 +205,7 @@ fun CustomerHomeWithSidebar(userName: String, userPhone: String, onLogout: () ->
                 val menus = listOf("Beranda", "Order", "Saldo", "Therapist Saya", "KUPON", "Pengaturan Profil")
                 menus.forEach { title ->
                     NavigationDrawerItem(
-                        icon = {
-                            Text(
-                                when (title) {
-                                    "Beranda" -> "🏠"
-                                    "Order" -> "📦"
-                                    "Saldo" -> "💳"
-                                    "Therapist Saya" -> "❤️"
-                                    "KUPON" -> "🎟️"
-                                    else -> "👤"
-                                }
-                            )
-                        },
+                        icon = { Text(when (title) { "Beranda" -> "🏠"; "Order" -> "📦"; "Saldo" -> "💳"; "Therapist Saya" -> "❤️"; "KUPON" -> "🎟️"; else -> "👤" }) },
                         label = { Text(title, fontWeight = if (selected == title) FontWeight.Bold else FontWeight.Normal) },
                         selected = selected == title,
                         onClick = { selected = title; scope.launch { drawerState.close() } },
@@ -185,18 +215,11 @@ fun CustomerHomeWithSidebar(userName: String, userPhone: String, onLogout: () ->
                 }
                 Spacer(Modifier.weight(1f))
                 Divider()
-                // FIX KELUAR BUTTON - SEKARANG BALIK KE LOGIN
                 NavigationDrawerItem(
                     icon = { Text("🚪") },
                     label = { Text("Keluar", color = Color.Red, fontWeight = FontWeight.Bold) },
                     selected = false,
-                    onClick = {
-                        scope.launch {
-                            drawerState.close()
-                            delay(200)
-                            onLogout()
-                        }
-                    },
+                    onClick = { scope.launch { drawerState.close(); delay(200); onLogout() } },
                     modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                 )
                 Spacer(Modifier.height(16.dp))
@@ -248,7 +271,6 @@ fun CustomerHomeWithSidebar(userName: String, userPhone: String, onLogout: () ->
                             Column(Modifier.padding(16.dp)) { Text("🪷 Halo, Selamat Datang!", fontWeight = FontWeight.Bold, color = Color(0xFFB8860B)); Text("Mau pijat apa hari ini?", fontSize = 12.sp, color = Color.Gray) }
                         }
                     }
-                    // FITUR BARU: TERAPIS TERDEKAT (Gambar No 2)
                     item {
                         Column {
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
@@ -282,7 +304,6 @@ fun CustomerHomeWithSidebar(userName: String, userPhone: String, onLogout: () ->
                             }
                         }
                     }
-                    // LIST LAYANAN UPDATED
                     items(layanan) { item ->
                         Card(shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(Color.White), elevation = CardDefaults.cardElevation(2.dp), modifier = Modifier.fillMaxWidth()) {
                             Column(Modifier.padding(16.dp)) {
